@@ -43,10 +43,16 @@
           <div class="run-bar"><span id="run-hint">Ctrl + Enter — проверить</span><button id="stop" class="secondary" hidden>Остановить</button><button id="run" class="primary" disabled><span>▷</span> Проверить решение</button></div>
         </section>
         <section class="results panel" aria-labelledby="results-title"><div class="results-heading"><h2 id="results-title">Результат проверки</h2><span id="result-count" class="subtle"></span></div><div id="results" aria-live="polite"><div class="empty-result"><span class="terminal-symbol">&gt;_</span><p>Здесь появится результат</p><span>Запусти код, чтобы проверить его на всех тестах.</span></div></div></section>
+        <section id="joke-panel" class="joke-panel panel" aria-labelledby="joke-title" aria-live="polite" hidden>
+          <div class="joke-top"><span class="joke-label">АНЕКДОТ КАТЕГОРИИ Б</span><span id="joke-number"></span></div>
+          <h2 id="joke-title"></h2><blockquote id="joke-text"></blockquote>
+          <a id="joke-source" target="_blank" rel="noopener noreferrer">Источник анекдота ↗</a>
+        </section>
       </div>
     </div>
     <footer>Python / Практика<span>Код выполняется в твоём браузере</span></footer>
   </main>
 </div>
+<div id="fire-overlay" class="fire-overlay" aria-hidden="true"><video id="fire-video" muted playsinline preload="auto" disablepictureinpicture tabindex="-1"></video></div>
 <noscript>Для работы тренажёра включи JavaScript в браузере.</noscript>
 </body></html>

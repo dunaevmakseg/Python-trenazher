@@ -2,6 +2,11 @@ const $ = (id) => document.getElementById(id);
 const editor = $('editor');
 let bank, tasks = [], taskIndex = 0, variantIndex = 0, worker, ready = false, running = false, generation = 0, timer, selectionReady=false;
 const drafts = new Map(), reports = new Map();
+const jokes = JSON.parse(document.getElementById('joke-data')?.textContent || '[]');
+let fireTimer, fireTicket=0;
+const fireVideo=$('fire-video');
+fireVideo.src=document.getElementById('fire-data')?.textContent.trim() || './assets/fire-ring.mp4';
+fireVideo.muted=true;
 const current = () => tasks[taskIndex]?.variants[variantIndex];
 const starter = '# Входные переменные уже подготовлены.\n# Запиши ответ в result.\n\n';
 function node(tag, text, className) { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (className) el.className = className; return el; }
@@ -26,6 +31,7 @@ function renderNav() {
 }
 function selectTask(ti,vi=0) {
   if(!tasks[ti]?.variants[vi]) return;
+  stopFire();
   saveDraft(); if(running) cancelRun(false);
   taskIndex=ti; variantIndex=vi;
   const task=tasks[ti], v=current();
@@ -72,6 +78,14 @@ function jumpToLine(line) {
   editor.focus();editor.setSelectionRange(start,start+(lines[line-1]?.length??0));editor.scrollTop=Math.max(0,(line-4)*23);updateEditor();
 }
 function renderReport(report) {
+  const joke=jokes.find(item=>item.taskId===tasks[taskIndex]?.id);
+  $('joke-panel').hidden=report?.status!=='passed'||!joke;
+  if(report?.status==='passed'&&joke){
+    $('joke-title').textContent=joke.character;
+    $('joke-number').textContent=`НАГРАДА ЗА ЗАДАЧУ ${taskIndex+1}`;
+    $('joke-text').textContent=joke.text;
+    $('joke-source').href=joke.source;
+  }
   const box=$('results'); box.replaceChildren(); $('result-count').textContent='';
   if(!report){const empty=node('div',undefined,'empty-result');empty.append(node('span','>_','terminal-symbol'),node('p','Здесь появится результат'),node('span','Запусти код, чтобы проверить его на всех тестах.'));box.append(empty);return;}
   const passed=report.tests?.filter(t=>t.status==='passed').length??0;
@@ -112,7 +126,7 @@ function initWorker() {
     if(data.type==='loading-error')engineFailure('Не удалось загрузить Python. Проверь интернет и нажми «Подключить Python».');
     if(data.type==='result'){
       clearTimeout(timer);running=false;
-      reports.set(data.variantId,data.report);if(current()?.id===data.variantId)renderReport(data.report);
+      reports.set(data.variantId,data.report);if(current()?.id===data.variantId){renderReport(data.report);if(data.report.status==='failed'||data.report.status==='error')playFire();}
       runtime('Python готов','ready');controls();renderNav();
     }
   };
@@ -128,15 +142,34 @@ function cancelRun(show=true) {
 function runCode() {
   if(!bank||running)return;
   if(!ready){initWorker();return;}
-  saveDraft();running=true;controls();runtime('Проверяем тесты');
+  stopFire();saveDraft();running=true;controls();runtime('Проверяем тесты');
   renderReport({status:'running',title:'Проверяем решение…',message:`Подставляем входные данные: ${current().tests.length} тестов.`});
   const id=current().id;
   timer=setTimeout(()=>{
     const report={status:'error',title:'Превышено время выполнения',message:'Проверка заняла больше 5 секунд. Проверь размеры создаваемых строк и списков.'};
-    reports.set(id,report);cancelRun(false);renderReport(report);
+    reports.set(id,report);cancelRun(false);renderReport(report);playFire();
   },5000);
   worker.postMessage({type:'run',variantId:id,code:editor.value,tests:current().tests});
 }
+function stopFire(){
+  fireTicket++;clearTimeout(fireTimer);$('fire-overlay').classList.remove('is-playing','reduced-motion');fireVideo.pause();
+}
+function playFire(){
+  stopFire();const ticket=fireTicket;
+  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    $('fire-overlay').classList.add('reduced-motion');fireTimer=setTimeout(stopFire,350);return;
+  }
+  fireVideo.currentTime=0;
+  // Start the one-second effect only when the first frame can actually play.
+  const playback=fireVideo.play();
+  Promise.resolve(playback).then(()=>{
+    if(ticket!==fireTicket)return;
+    $('fire-overlay').classList.add('is-playing');fireTimer=setTimeout(stopFire,1000);
+  }).catch(()=>{if(ticket===fireTicket)stopFire();});
+}
+fireVideo.addEventListener('ended',stopFire);
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopFire();});
+document.addEventListener('keydown',event=>{if(event.key==='Escape')stopFire();});
 editor.addEventListener('input',()=>{saveDraft();updateEditor();if(current()&&reports.has(current().id)){reports.delete(current().id);renderReport();renderNav();}});
 editor.addEventListener('scroll',()=>$('line-numbers').scrollTop=editor.scrollTop);
 editor.addEventListener('click',updateEditor);editor.addEventListener('keyup',updateEditor);
