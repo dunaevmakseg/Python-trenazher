@@ -35,10 +35,10 @@ function selectTask(ti,vi=0) {
   $('difficulty').textContent=task.difficulty==='complex'?'Комплексная':'Отработка';
   $('difficulty').className='badge'+(task.difficulty==='complex'?' complex':'');
   $('prev').disabled=false; $('next').disabled=false;
-  const position=tasks.slice(0,ti).reduce((total,t)=>total+t.variants.length,0)+vi;
-  const total=tasks.reduce((count,t)=>count+t.variants.length,0);
-  $('prev').title=position===0?'К последнему варианту':'Предыдущий вариант';
-  $('next').title=position===total-1?'К первому варианту':'Следующий вариант';
+  const position=ti;
+  const total=tasks.length;
+  $('prev').title=position===0?'К последней задаче':'Предыдущая задача';
+  $('next').title=position===total-1?'К первой задаче':'Следующая задача';
   $('prev').setAttribute('aria-label',$('prev').title);
   $('next').setAttribute('aria-label',$('next').title);
   $('position').textContent=`${position+1} / ${total}`;
@@ -101,7 +101,10 @@ function controls() { $('run').disabled=!bank||running; $('run').textContent=run
 function initWorker() {
   clearTimeout(timer); worker?.terminate(); ready=false; const epoch=++generation;
   runtime('Python загружается');
-  worker=new Worker('./python-worker.js',{type:'module'});
+  const bundled=document.getElementById('worker-source');
+  const workerURL=bundled?URL.createObjectURL(new Blob([JSON.parse(bundled.textContent)],{type:'text/javascript'})):'./python-worker.js';
+  worker=new Worker(workerURL,{type:'module'});
+  if(bundled)URL.revokeObjectURL(workerURL);
   timer=setTimeout(()=>engineFailure('Загрузка Python заняла слишком много времени. Проверь интернет и нажми «Подключить Python».'),90000);
   worker.onmessage=({data})=>{
     if(epoch!==generation)return;
@@ -147,17 +150,17 @@ editor.addEventListener('keydown',(event)=>{
 document.addEventListener('keydown',event=>{if((event.ctrlKey||event.metaKey)&&event.key==='Enter'){event.preventDefault();runCode();}});
 $('run').addEventListener('click',runCode);$('stop').addEventListener('click',()=>cancelRun());
 function moveExercise(delta) {
-  const positions=tasks.flatMap((task,ti)=>task.variants.map((_,vi)=>({ti,vi})));
-  const index=positions.findIndex(p=>p.ti===taskIndex&&p.vi===variantIndex);
-  const target=positions[(index+delta+positions.length)%positions.length];
-  if(target)selectTask(target.ti,target.vi);
+  if(tasks.length)selectTask((taskIndex+delta+tasks.length)%tasks.length,0);
 }
 $('prev').addEventListener('click',()=>moveExercise(-1));$('next').addEventListener('click',()=>moveExercise(1));
 $('chapter').addEventListener('change',()=>selectTask(0));
 window.addEventListener('beforeunload',event=>{if([...drafts.values()].some(x=>x.trim()&&x!==starter)){event.preventDefault();event.returnValue='';}});
 async function start() {
   try{
-    const response=await fetch('./tasks.json');if(!response.ok)throw Error('tasks');bank=await response.json();tasks=bank.chapters[0].tasks;
+    const bundled=document.getElementById('task-data');
+    if(bundled)bank=JSON.parse(bundled.textContent);
+    else{const response=await fetch('./tasks.json');if(!response.ok)throw Error('tasks');bank=await response.json();}
+    tasks=bank.chapters[0].tasks;
     $('chapter').replaceChildren(node('option',bank.chapters[0].title));$('task-count').textContent=tasks.length;
     let ti=0,vi=0;tasks.forEach((t,i)=>t.variants.forEach((v,j)=>{if('#'+v.id===location.hash){ti=i;vi=j;}}));
     selectTask(ti,vi);initWorker();registerTools();
