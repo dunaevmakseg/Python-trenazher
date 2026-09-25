@@ -1,6 +1,6 @@
 const $ = (id) => document.getElementById(id);
 const editor = $('editor');
-let bank, tasks = [], taskIndex = 0, variantIndex = 0, worker, ready = false, running = false, generation = 0, timer, selectionReady=false;
+let bank, tasks = [], chapterIndex = 0, taskIndex = 0, variantIndex = 0, worker, ready = false, running = false, generation = 0, timer, selectionReady=false;
 const drafts = new Map(), reports = new Map();
 const jokes = JSON.parse(document.getElementById('joke-data')?.textContent || '[]');
 let fireTimer, fireTicket=0;
@@ -9,6 +9,38 @@ fireVideo.src=document.getElementById('fire-data')?.textContent.trim() || './ass
 fireVideo.muted=true;
 const current = () => tasks[taskIndex]?.variants[variantIndex];
 const starter = '# Входные переменные уже подготовлены.\n# Запиши ответ в result.\n\n';
+function initialCode(v) {
+  if(v.contract?.submission==='function_definitions')return '# Определи функции из условия.\n# Проверка сама вызовет их с тестовыми данными.\n\n';
+  if(v.contract?.submission==='module_source')return '# Напиши код модуля из условия.\n# Имя модуля и sample подставит проверка.\n\n';
+  if(v.tests[0].setup_code.includes('input ='))return '# Читай данные через input(), как указано в условии.\n# Тесты сами подставят ответы.\n\n';
+  if(v.contract?.output_variables)return '# Используй подготовленные переменные.\n# Сохрани ответ в переменные из условия.\n\n';
+  return starter;
+}
+function visibleInputs(test, v) {
+  const names=new Set(Object.keys(v.inputs));
+  const lines=test.setup_code.split('\n').filter(line=>names.has(line.match(/^([A-Za-z_]\w*)\s*=/)?.[1]));
+  return lines.join('\n')||test.setup_code;
+}
+function selectChapter(index, ti=0, vi=0) {
+  if(!bank.chapters[index]?.tasks[ti]?.variants[vi])return;
+  saveDraft(); selectionReady=false;
+  chapterIndex=index; tasks=bank.chapters[index].tasks;
+  $('chapter').value=String(index);
+  $('chapter-name').textContent=bank.chapters[index].title;
+  $('task-count').textContent=tasks.length;
+  $('task-nav').setAttribute('aria-label',`Задачи главы ${index+1}`);
+  selectTask(ti,vi);
+}
+function selectById(id) {
+  for(let ci=0;ci<bank.chapters.length;ci++){
+    const chapter=bank.chapters[ci];
+    for(let ti=0;ti<chapter.tasks.length;ti++){
+      const vi=chapter.tasks[ti].variants.findIndex(v=>v.id===id);
+      if(vi!==-1){selectChapter(ci,ti,vi);return true;}
+    }
+  }
+  return false;
+}
 function node(tag, text, className) { const el = document.createElement(tag); if (text !== undefined) el.textContent = text; if (className) el.className = className; return el; }
 function runtime(text, state = '') { $('runtime').className = `runtime ${state}`; $('runtime').replaceChildren(node('i'),document.createTextNode(text)); }
 function updateEditor() {
@@ -66,10 +98,25 @@ function selectTask(ti,vi=0) {
   $('test-count').textContent=`${v.tests.length} тестов`;
   $('inputs').replaceChildren();
   Object.entries(v.inputs).forEach(([name,description])=>$('inputs').append(node('dt',name),node('dd',description)));
-  $('example-input').textContent=v.tests[0].setup_code;
+  $('example-input').textContent=visibleInputs(v.tests[0],v);
   $('example-output').textContent=v.tests[0].expected_python;
+  const functionMode=v.contract?.submission==='function_definitions';
+  const moduleMode=v.contract?.submission==='module_source';
+  const inputMode=v.tests[0].setup_code.includes('input =');
+  $('contract-title').textContent=functionMode?'Как отправить решение':moduleMode?'Код модуля':'Куда записать ответ';
+  $('contract-text').textContent=functionMode?'Определи функции с именами и параметрами из условия. Проверка сама вызовет их. Печатай только если этого требует задача.':moduleMode?'Напиши код модуля из условия. Проверка выполнит его как отдельный запуск и как импорт.':inputMode?'Ответы для input() подставляются автоматически. Запиши результат в переменную result по условию.':v.contract?.output_variables?`Подготовленные переменные уже доступны. Сохрани ответ в: ${v.contract.output_variables.join(', ')}.`:'Присвой ответ переменной result. Входные переменные уже подготовлены. Печатать ничего не нужно.';
+  const probe=v.tests[0].probe_code||'actual = result';
+  if(v.contract?.checker_note)$('contract-text').textContent+=' '+v.contract.checker_note;
+  $('probe-details').hidden=probe==='actual = result';
+  $('probe-code').textContent=probe;
+  $('example-stdout').textContent=JSON.stringify(v.tests[0].expected_stdout);
+  $('stdout-example').hidden=!v.tests.some(t=>t.expected_stdout);
+  $('example-label').textContent=probe==='actual = result'?'Ожидаемый result':'Ожидаемый результат проверки';
+  $('review-list').replaceChildren(...(v.manual_review||[]).map(text=>node('li',text)));
+  const future=bank.chapters.slice(chapterIndex+1).map(ch=>ch.title);
+  $('chapter-rule').textContent=`Можно использовать материал главы «${bank.chapters[chapterIndex].title}» и предыдущих глав.`+(future.length?' Следующие главы пока не нужны.':' Все темы учебника уже доступны.');
   $('focus').replaceChildren(...v.focus.map(x=>node('span',x,'chip')));
-  editor.value=drafts.get(v.id)??starter; selectionReady=true;
+  editor.value=drafts.get(v.id)??initialCode(v); selectionReady=true;
   updateEditor(); renderNav(); renderReport(reports.get(v.id));
 }
 function field(label,value) { const el=node('div',undefined,'test-field');el.append(node('span',label),node('pre',value));return el; }
@@ -100,9 +147,12 @@ function renderReport(report) {
   report.tests?.forEach((test,i)=>{
     const detail=node('details',undefined,'test-result'); detail.open=test.status!=='passed';
     const summary=node('summary'); summary.append(node('span',`Тест ${i+1} · ${test.purpose}`),node('span',test.status==='passed'?'✓ Пройден':test.status==='error'?'Ошибка':'Не пройден','test-state'+(test.status==='passed'?'':' fail')));detail.append(summary);
-    detail.append(field('Входные данные',test.input),field('Ожидаемый result',test.expected));
-    if(test.error) renderError(detail,test.error); else detail.append(field('Полученный result',test.actual??'result не определён'));
-    if(test.stdout || test.stdoutMismatch) {detail.append(field('Вывод print()',test.stdout||'(пусто)'));if(test.stdoutMismatch)detail.append(node('p','По условию печатать ничего не нужно. Убери print() и запиши ответ в result.','error-hint'));}
+    detail.append(field('Входные данные',test.input),field('Ожидаемый результат',test.expected));
+    if(test.error) renderError(detail,test.error); else detail.append(field('Полученный результат',test.actual??'не определён'));
+    if(test.stdout || test.expectedStdout || test.stdoutMismatch) {
+      detail.append(field('Ожидаемый вывод print()',test.expectedStdout||'(пусто)'),field('Полученный вывод print()',test.stdout||'(пусто)'));
+      if(test.stdoutMismatch)detail.append(node('p','Вывод отличается от ожидаемого. Проверь текст, пробелы и переводы строк.','error-hint'));
+    }
     box.append(detail);
   });
 }
@@ -146,10 +196,10 @@ function runCode() {
   renderReport({status:'running',title:'Проверяем решение…',message:`Подставляем входные данные: ${current().tests.length} тестов.`});
   const id=current().id;
   timer=setTimeout(()=>{
-    const report={status:'error',title:'Превышено время выполнения',message:'Проверка заняла больше 5 секунд. Проверь размеры создаваемых строк и списков.'};
+    const report={status:'error',title:'Превышено время выполнения',message:'Проверка заняла больше 5 секунд. Проверь завершение циклов, рекурсии и размеры создаваемых объектов.'};
     reports.set(id,report);cancelRun(false);renderReport(report);playFire();
   },5000);
-  worker.postMessage({type:'run',variantId:id,code:editor.value,tests:current().tests});
+  worker.postMessage({type:'run',variantId:id,chapter:bank.chapters[chapterIndex].number,code:editor.value,tests:current().tests.map(t=>({...t,display_input_code:visibleInputs(t,current())}))});
 }
 function stopFire(){
   fireTicket++;clearTimeout(fireTimer);$('fire-overlay').classList.remove('is-playing','reduced-motion');fireVideo.pause();
@@ -187,25 +237,25 @@ function moveExercise(delta) {
   if(tasks.length)selectTask((taskIndex+delta+tasks.length)%tasks.length,0);
 }
 $('prev').addEventListener('click',()=>moveExercise(-1));$('next').addEventListener('click',()=>moveExercise(1));
-$('chapter').addEventListener('change',()=>selectTask(0));
-window.addEventListener('beforeunload',event=>{if([...drafts.values()].some(x=>x.trim()&&x!==starter)){event.preventDefault();event.returnValue='';}});
+$('chapter').addEventListener('change',()=>selectChapter(Number($('chapter').value)));
+window.addEventListener('hashchange',()=>{if(bank)selectById(location.hash.slice(1));});
+window.addEventListener('beforeunload',event=>{if([...drafts.values()].some(x=>x.split('\n').some(line=>line.trim()&&!line.trim().startsWith('#')))){event.preventDefault();event.returnValue='';}});
 async function start() {
   try{
     const bundled=document.getElementById('task-data');
     if(bundled)bank=JSON.parse(bundled.textContent);
     else{const response=await fetch('./tasks.json');if(!response.ok)throw Error('tasks');bank=await response.json();}
-    tasks=bank.chapters[0].tasks;
-    $('chapter').replaceChildren(node('option',bank.chapters[0].title));$('task-count').textContent=tasks.length;
-    let ti=0,vi=0;tasks.forEach((t,i)=>t.variants.forEach((v,j)=>{if('#'+v.id===location.hash){ti=i;vi=j;}}));
-    selectTask(ti,vi);initWorker();registerTools();
+    $('chapter').replaceChildren(...bank.chapters.map((ch,i)=>{const option=node('option',`${ch.number}. ${ch.title}`);option.value=String(i);return option;}));
+    if(!selectById(location.hash.slice(1)))selectChapter(0);
+    initWorker();registerTools();
   }catch(error){$('statement').textContent='Не удалось загрузить задачи. Обнови страницу и проверь соединение.';runtime('Ошибка загрузки','failed');}
 }
 function registerTools(){
   const context=document.modelContext;if(!context?.registerTool)return;
   const lifecycle=new AbortController();window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
   const definitions=[
-    {name:'list_python_exercises',description:'Прочитать список доступных задач и вариантов.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>tasks.map(t=>({title:t.title,variants:t.variants.map(v=>({id:v.id,title:v.title}))}))},
-    {name:'select_python_exercise',description:'Открыть вариант задачи в тренажёре. Текущий черновик остаётся в памяти вкладки.',inputSchema:{type:'object',properties:{variantId:{type:'string'}},required:['variantId'],additionalProperties:false},annotations:{readOnlyHint:false},execute:({variantId})=>{for(let i=0;i<tasks.length;i++){const j=tasks[i].variants.findIndex(v=>v.id===variantId);if(j!==-1){selectTask(i,j);return {id:current().id,title:current().title};}}throw Error('Неизвестный вариант');}}
+    {name:'list_python_exercises',description:'Прочитать все главы, задачи и варианты.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>bank.chapters.map(ch=>({chapter:ch.title,tasks:ch.tasks.map(t=>({title:t.title,variants:t.variants.map(v=>({id:v.id,title:v.title}))}))}))},
+    {name:'select_python_exercise',description:'Открыть вариант любой главы. Черновик остаётся в памяти вкладки.',inputSchema:{type:'object',properties:{variantId:{type:'string'}},required:['variantId'],additionalProperties:false},annotations:{readOnlyHint:false},execute:({variantId})=>{if(selectById(variantId))return {id:current().id,title:current().title};throw Error('Неизвестный вариант');}}
   ];
   for(const definition of definitions){try{Promise.resolve(context.registerTool(definition,{signal:lifecycle.signal})).catch(()=>{});}catch{}}
 }

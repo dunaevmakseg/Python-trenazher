@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#111e32"><meta name="description" content="Практика Python для аналитика: строки, списки и проверка решений на тестах.">
+  <meta name="theme-color" content="#111e32"><meta name="description" content="Практика Python для аналитика: 6 глав, 81 задача и проверка решений на тестах.">
   <title>Python / Практика</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23111e32'/%3E%3Ctext x='5' y='23' fill='%23ffd45a' font-family='monospace' font-size='21' font-weight='bold'%3Epy%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="styles.css?v=3"><script type="module" src="app.js?v=3"></script>
@@ -17,7 +17,7 @@
     <label class="eyebrow" for="chapter">ТЕМА</label>
     <select id="chapter" aria-label="Тема"><option>Строки и списки</option></select>
     <div class="nav-heading"><span>Задачи</span><span id="task-count">15</span></div>
-    <nav id="task-nav" aria-label="Задачи первой главы"></nav>
+    <nav id="task-nav" aria-label="Задачи выбранной главы"></nav>
     <div class="sidebar-note"><span>↗</span> Любой порядок.<br>Все задачи открыты.</div>
   </aside>
   <main>
@@ -30,10 +30,11 @@
         <h2 id="variant-title">Символы кода и текстовый номер</h2>
         <p id="statement">Верните список отдельных символов кода и номер партии в виде строки.</p>
         <h3>Входные данные</h3><dl id="inputs"></dl>
-        <div class="contract"><strong>Куда записать ответ</strong><p>Присвой результат переменной <code>result</code>. Входные переменные подставляются автоматически — <code>input()</code> и <code>print()</code> не нужны.</p></div>
-        <h3>Пример проверки</h3><div class="example"><span>Входные данные</span><pre id="example-input"></pre><span>Ожидаемый result</span><pre id="example-output"></pre></div>
+        <div class="contract"><strong id="contract-title">Куда записать ответ</strong><p id="contract-text"></p></div>
+        <h3>Пример проверки</h3><div class="example"><span>Входные данные</span><pre id="example-input"></pre><span id="example-label">Ожидаемый result</span><pre id="example-output"></pre><div id="stdout-example" hidden><span>Ожидаемый вывод print() (\n — перевод строки)</span><pre id="example-stdout"></pre></div></div>
+        <details id="probe-details" class="method-details" hidden><summary>Как проверяется ответ</summary><p>После твоего решения проверка выполнит эти вызовы. Значение actual сравнивается с ожидаемым. Этот служебный код писать не нужно.</p><pre id="probe-code"></pre></details>
         <details class="method-details"><summary>Что отрабатываем</summary><div id="focus" class="chips"></div><p>Используй эти операции. Проверка тестами оценивает результат; выбор методов сверяй с этим списком.</p></details>
-        <p class="chapter-rule">Только материал первой главы: без условий, циклов и определения функций.</p>
+        <ul id="review-list"></ul><p id="chapter-rule" class="chapter-rule"></p>
       </section>
       <div class="coding-column">
         <section class="editor-panel panel" aria-labelledby="editor-label">

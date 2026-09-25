@@ -12,7 +12,7 @@ async function init() {
 self.onmessage = ({data}) => {
   if (data.type !== 'run' || !python) return;
   try {
-    python.globals.set('_request_json',JSON.stringify({code:data.code,tests:data.tests}));
+    python.globals.set('_request_json',JSON.stringify({code:data.code,tests:data.tests,chapter:data.chapter}));
     const report=JSON.parse(python.runPython('_grade_json(_request_json)'));
     python.globals.delete('_request_json');
     self.postMessage({type:'result',variantId:data.variantId,report});
