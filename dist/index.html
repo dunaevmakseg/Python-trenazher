@@ -9,7 +9,7 @@
 
 .task-switch{align-items:flex-start;flex-shrink:0}#position{font:11px/34px Consolas,monospace;color:var(--muted);white-space:nowrap}@media(max-width:700px){.task-heading{flex-wrap:wrap}.task-switch{padding-top:0}}
 
-.joke-panel{padding:21px 23px;border-color:#6b5931;background:linear-gradient(125deg,#292a27,#172438)}.joke-top{display:flex;gap:12px;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:1.1px;color:#aa9d7a}.joke-label{color:var(--yellow)}.joke-panel h2{font-size:17px;margin:17px 0 12px}.joke-panel blockquote{white-space:pre-line;margin:0 0 18px;color:#e7e7da;font-size:15px;line-height:1.8}.joke-panel a{font-size:10px;color:#a5b2c2;text-decoration:none}.joke-panel a:hover{text-decoration:underline}.fire-overlay{position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:0;visibility:hidden;mix-blend-mode:screen;mask-image:radial-gradient(ellipse at center,transparent 0%,transparent 48%,#000 77%);-webkit-mask-image:radial-gradient(ellipse at center,transparent 0%,transparent 48%,#000 77%)}.fire-overlay video{width:100%;height:100%;object-fit:fill;display:block}.fire-overlay.is-playing{visibility:visible;animation:fire-flash 1s ease-out both}.fire-overlay.reduced-motion{visibility:visible;opacity:.7;background:transparent;box-shadow:inset 0 0 55px #ff8b21;mask-image:none;-webkit-mask-image:none}.fire-overlay.reduced-motion video{visibility:hidden}@keyframes fire-flash{0%{opacity:0}12%{opacity:1}65%{opacity:.95}100%{opacity:0}}
+.joke-panel{padding:21px 23px;border-color:#6b5931;background:linear-gradient(125deg,#292a27,#172438)}.joke-top{display:flex;gap:12px;justify-content:space-between;align-items:center;font-size:9px;letter-spacing:1.1px;color:#aa9d7a}.joke-label{color:var(--yellow)}.joke-panel h2{font-size:17px;margin:17px 0 12px}.joke-panel blockquote{white-space:pre-line;margin:0 0 18px;color:#e7e7da;font-size:15px;line-height:1.8}.joke-panel a{font-size:10px;color:#a5b2c2;text-decoration:none}.joke-panel a:hover{text-decoration:underline}.fire-overlay{position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:0;visibility:hidden;mix-blend-mode:screen;mask-image:radial-gradient(ellipse at center,transparent 0%,transparent 48%,#000 77%);-webkit-mask-image:radial-gradient(ellipse at center,transparent 0%,transparent 48%,#000 77%)}.fire-overlay video{width:100%;height:100%;object-fit:fill;display:block}.fire-overlay.is-playing{visibility:visible;animation:fire-flash 3s ease-out both}.fire-overlay.reduced-motion{visibility:visible;opacity:.7;background:transparent;box-shadow:inset 0 0 55px #ff8b21;mask-image:none;-webkit-mask-image:none}.fire-overlay.reduced-motion video{visibility:hidden}@keyframes fire-flash{0%{opacity:0}12%{opacity:1}65%{opacity:.95}100%{opacity:0}}
 </style>
 </head>
 <body>
@@ -228,11 +228,12 @@ function playFire(){
     $('fire-overlay').classList.add('reduced-motion');fireTimer=setTimeout(stopFire,350);return;
   }
   fireVideo.currentTime=0;
-  // Start the one-second effect only when the first frame can actually play.
+  fireVideo.playbackRate=1/3;
+  // Slow both the footage and its fade envelope by the same factor.
   const playback=fireVideo.play();
   Promise.resolve(playback).then(()=>{
     if(ticket!==fireTicket)return;
-    $('fire-overlay').classList.add('is-playing');fireTimer=setTimeout(stopFire,1000);
+    $('fire-overlay').classList.add('is-playing');fireTimer=setTimeout(stopFire,3000);
   }).catch(()=>{if(ticket===fireTicket)stopFire();});
 }
 fireVideo.addEventListener('ended',stopFire);

@@ -160,11 +160,12 @@ function playFire(){
     $('fire-overlay').classList.add('reduced-motion');fireTimer=setTimeout(stopFire,350);return;
   }
   fireVideo.currentTime=0;
-  // Start the one-second effect only when the first frame can actually play.
+  fireVideo.playbackRate=1/3;
+  // Slow both the footage and its fade envelope by the same factor.
   const playback=fireVideo.play();
   Promise.resolve(playback).then(()=>{
     if(ticket!==fireTicket)return;
-    $('fire-overlay').classList.add('is-playing');fireTimer=setTimeout(stopFire,1000);
+    $('fire-overlay').classList.add('is-playing');fireTimer=setTimeout(stopFire,3000);
   }).catch(()=>{if(ticket===fireTicket)stopFire();});
 }
 fireVideo.addEventListener('ended',stopFire);
