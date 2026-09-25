@@ -1,0 +1,3436 @@
+{
+  "schema_version": "1.0.0",
+  "title": "Python для системного и продуктового аналитика: банк задач",
+  "language": "ru",
+  "python_min_version": "3.10",
+  "source_textbook": {
+    "file": "python_textbook.pdf",
+    "sha256": "b4cb39faf89443457b7d5ccb1f0fcbe061dbdc11bbd942795eedf917f9fd2da3",
+    "pages": 83
+  },
+  "pedagogy": {
+    "prior_knowledge": [
+      "переменные",
+      "print",
+      "базовая арифметика",
+      "базовые типы",
+      "все предыдущие главы"
+    ],
+    "sequence": "Каждая задача доступна после изучения всей своей главы. Конструкции будущих глав запрещены.",
+    "medium_variants": "Независимые варианты одного рабочего сюжета. Каждый проверяет 1–2 группы операций; их не нужно объединять в одну программу.",
+    "complex_tasks": "Последние три задачи каждой главы. Один цельный результат, несколько правил и граничных случаев.",
+    "coverage_note": "Покрытие сопоставлено с разделами учебника. Семейства похожих методов сгруппированы; структурные свойства дополнительно проверяются при просмотре кода."
+  },
+  "grading_protocol": {
+    "execution_order": [
+      "Создать новое изолированное окружение для каждого теста.",
+      "Выполнить setup_code теста.",
+      "Выполнить код учащегося.",
+      "Выполнить доверенный probe_code проверяющей системы.",
+      "Сравнить actual с ast.literal_eval(expected_python) с учётом типов.",
+      "Сравнить stdout кода учащегося с expected_stdout; нормализуется только CRLF в LF."
+    ],
+    "student_visibility": "Показать условие, входные переменные, требования и примеры тестов. setup_code и probe_code выполняет тренажёр: учащемуся не нужно их переписывать или изучать раньше времени.",
+    "comparison": "Рекурсивное равенство значения и типа: bool не равен int для проверки; list не равен tuple. Порядок dict не учитывается, если задача явно не возвращает список ключей. Порядок list/tuple учитывается. В строках сохраняются пробелы, регистр и переводы строк. Числа в тестах целые либо точно представимые; денежных вычислений на float нет.",
+    "isolation": "Тесты одного варианта независимы. Только последовательные вызовы внутри одного probe_code намеренно разделяют состояние.",
+    "io": "Основной режим: переменные подготовлены, результат присвоен result. В главе функций требуется определить указанные функции; проверяющий код вызывает их. input, чтение файлов и сеть для решения не нужны.",
+    "structural_checks": "Одни ответы не доказывают использование нужного метода, ленивость, рекурсию или сложность. required_constructs и manual_review являются обязательными отдельными критериями. Не запускайте пользовательский код в процессе веб-сервера; будущему тренажёру нужна изоляция с ограничением времени и памяти.",
+    "limits_recommended": {
+      "wall_time_seconds": 2,
+      "memory_megabytes": 128
+    },
+    "solutions": "Эталонные решения в этот файл не включены. Ожидаемые результаты вычислены и проверены отдельно."
+  },
+  "statistics": [
+    {
+      "chapter": 1,
+      "tasks": 15,
+      "variants": 48,
+      "tests": 245
+    }
+  ],
+  "chapters": [
+    {
+      "id": "ch01",
+      "number": 1,
+      "title": "Строки и списки",
+      "textbook_sections": 18,
+      "tasks": [
+        {
+          "id": "ch01-t01",
+          "number": 1,
+          "title": "Поля в выгрузке",
+          "difficulty": "medium",
+          "context": "Аналитик проверяет форму выгрузки до загрузки в отчёт.",
+          "textbook_sections": [
+            1,
+            2
+          ],
+          "variants": [
+            {
+              "id": "ch01-t01-v01",
+              "title": "Символы кода и текстовый номер",
+              "statement": "Верните [список отдельных символов code, номер batch_id в виде строки]. Пробелы и повторяющиеся символы code сохраняйте.",
+              "focus": [
+                "list",
+                "str"
+              ],
+              "inputs": {
+                "code": "строка",
+                "batch_id": "неотрицательное целое"
+              },
+              "required_constructs": [
+                "list",
+                "str"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t01-v01-c01",
+                  "purpose": "обычный",
+                  "setup_code": "code = 'AB12'\nbatch_id = 42",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['A', 'B', '1', '2'], '42']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v01-c02",
+                  "purpose": "пустой код",
+                  "setup_code": "code = ''\nbatch_id = 0",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[], '0']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v01-c03",
+                  "purpose": "кириллица",
+                  "setup_code": "code = 'РФ'\nbatch_id = 7",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['Р', 'Ф'], '7']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v01-c04",
+                  "purpose": "пробелы",
+                  "setup_code": "code = ' A '\nbatch_id = 100",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[' ', 'A', ' '], '100']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v01-c05",
+                  "purpose": "повторы",
+                  "setup_code": "code = 'aaa'\nbatch_id = 11",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', 'a', 'a'], '11']",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t01-v02",
+              "title": "Размер полей",
+              "statement": "Получите result = [число символов в source, число столбцов в columns]. Пустое имя столбца всё равно является одним столбцом.",
+              "focus": [
+                "len"
+              ],
+              "inputs": {
+                "source": "строка",
+                "columns": "список строк"
+              },
+              "required_constructs": [
+                "len"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t01-v02-c01",
+                  "purpose": "оба пусты",
+                  "setup_code": "source = ''\ncolumns = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, 0]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v02-c02",
+                  "purpose": "обычная схема",
+                  "setup_code": "source = 'events'\ncolumns = ['id', 'date']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[6, 2]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v02-c03",
+                  "purpose": "пустой столбец",
+                  "setup_code": "source = 'я'\ncolumns = ['']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[1, 1]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v02-c04",
+                  "purpose": "Unicode и повторы",
+                  "setup_code": "source = 'кот'\ncolumns = ['x', 'x']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[3, 2]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v02-c05",
+                  "purpose": "пробелы значимы",
+                  "setup_code": "source = '  '\ncolumns = ['a', 'b', 'c']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[2, 3]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t01-v03",
+              "title": "Заголовок из частей",
+              "statement": "Соберите result: префикс, символ |, название, затем suffix, повторённый copies раз. Ничего не обрезайте.",
+              "focus": [
+                "+",
+                "*"
+              ],
+              "inputs": {
+                "prefix": "строка",
+                "name": "строка",
+                "suffix": "строка",
+                "copies": "целое от 0 до 5"
+              },
+              "required_constructs": [
+                "+",
+                "*"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t01-v03-c01",
+                  "purpose": "обычный",
+                  "setup_code": "prefix = 'prod'\nname = 'orders'\nsuffix = '!'\ncopies = 2",
+                  "probe_code": "actual = result",
+                  "expected_python": "'prod|orders!!'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v03-c02",
+                  "purpose": "ноль повторов",
+                  "setup_code": "prefix = ''\nname = 'x'\nsuffix = '!'\ncopies = 0",
+                  "probe_code": "actual = result",
+                  "expected_python": "'|x'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v03-c03",
+                  "purpose": "пустые строки",
+                  "setup_code": "prefix = ''\nname = ''\nsuffix = ''\ncopies = 4",
+                  "probe_code": "actual = result",
+                  "expected_python": "'|'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v03-c04",
+                  "purpose": "пробел",
+                  "setup_code": "prefix = 'A '\nname = ' B'\nsuffix = ' '\ncopies = 2",
+                  "probe_code": "actual = result",
+                  "expected_python": "'A | B  '",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v03-c05",
+                  "purpose": "кириллица",
+                  "setup_code": "prefix = 'отчёт'\nname = 'день'\nsuffix = '-'\ncopies = 1",
+                  "probe_code": "actual = result",
+                  "expected_python": "'отчёт|день-'",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t01-v04",
+              "title": "Сравнение схем",
+              "statement": "Верните [равны ли схемы left и right с учётом порядка, есть ли field в left, непуста ли right].",
+              "focus": [
+                "сравнения и in",
+                "bool"
+              ],
+              "inputs": {
+                "left": "список строк",
+                "right": "список строк",
+                "field": "строка"
+              },
+              "required_constructs": [
+                "сравнения и in",
+                "bool"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t01-v04-c01",
+                  "purpose": "одинаковые",
+                  "setup_code": "left = ['id', 'name']\nright = ['id', 'name']\nfield = 'id'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, True, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v04-c02",
+                  "purpose": "перестановка",
+                  "setup_code": "left = ['id', 'name']\nright = ['name', 'id']\nfield = 'name'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v04-c03",
+                  "purpose": "пустые",
+                  "setup_code": "left = []\nright = []\nfield = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v04-c04",
+                  "purpose": "подстрока не поле",
+                  "setup_code": "left = ['user_id']\nright = []\nfield = 'id'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t01-v04-c05",
+                  "purpose": "пустое поле",
+                  "setup_code": "left = ['']\nright = ['']\nfield = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, True, True]",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t02",
+          "number": 2,
+          "title": "Окно событий",
+          "difficulty": "medium",
+          "context": "Из сохранённого списка меток нужно извлекать строго определённые позиции.",
+          "textbook_sections": [
+            3,
+            4
+          ],
+          "variants": [
+            {
+              "id": "ch01-t02-v01",
+              "title": "Края окна",
+              "statement": "Верните [первый, последний, предпоследний] элемент events. Длина не меньше 2.",
+              "focus": [
+                "индексация"
+              ],
+              "inputs": {
+                "events": "список строк длины 2–20"
+              },
+              "required_constructs": [
+                "индексация"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t02-v01-c01",
+                  "purpose": "два",
+                  "setup_code": "events = ['a', 'b']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a', 'b', 'a']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t02-v01-c02",
+                  "purpose": "три",
+                  "setup_code": "events = ['login', 'view', 'buy']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['login', 'buy', 'view']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t02-v01-c03",
+                  "purpose": "повторы",
+                  "setup_code": "events = ['x', 'x', 'x']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['x', 'x', 'x']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t02-v01-c04",
+                  "purpose": "пустые метки",
+                  "setup_code": "events = ['', '']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['', '', '']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t02-v01-c05",
+                  "purpose": "четыре",
+                  "setup_code": "events = ['1', '2', '3', '4']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['1', '4', '3']",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t02-v02",
+              "title": "Выборка по срезу",
+              "statement": "Верните events[start:stop:step]. Границы могут выходить за длину; step ненулевой. Срез является спецификацией окна, а не требованием писать именно такую строку.",
+              "focus": [
+                "срезы"
+              ],
+              "inputs": {
+                "events": "список строк",
+                "start": "целое",
+                "stop": "целое",
+                "step": "целое, кроме 0"
+              },
+              "required_constructs": [
+                "срезы"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t02-v02-c01",
+                  "purpose": "обычное окно",
+                  "setup_code": "events = ['a', 'b', 'c', 'd']\nstart = 1\nstop = 3\nstep = 1",
+                  "probe_code": "actual = result",
+                  "expected_python": "['b', 'c']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t02-v02-c02",
+                  "purpose": "за границей",
+                  "setup_code": "events = ['a', 'b']\nstart = 0\nstop = 99\nstep = 1",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a', 'b']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t02-v02-c03",
+                  "purpose": "пусто",
+                  "setup_code": "events = []\nstart = 0\nstop = 5\nstep = 1",
+                  "probe_code": "actual = result",
+                  "expected_python": "[]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t02-v02-c04",
+                  "purpose": "обратный шаг",
+                  "setup_code": "events = ['a', 'b', 'c', 'd']\nstart = 3\nstop = 0\nstep = -1",
+                  "probe_code": "actual = result",
+                  "expected_python": "['d', 'c', 'b']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t02-v02-c05",
+                  "purpose": "через один",
+                  "setup_code": "events = ['a', 'b', 'c', 'd', 'e']\nstart = 0\nstop = 5\nstep = 2",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a', 'c', 'e']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t02-v02-c06",
+                  "purpose": "неверное направление",
+                  "setup_code": "events = ['a', 'b']\nstart = 0\nstop = 2\nstep = -1",
+                  "probe_code": "actual = result",
+                  "expected_python": "[]",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t03",
+          "number": 3,
+          "title": "Единообразные названия",
+          "difficulty": "medium",
+          "context": "Перед сравнением справочников нужны разные режимы нормализации; варианты решаются отдельно.",
+          "textbook_sections": [
+            5
+          ],
+          "variants": [
+            {
+              "id": "ch01-t03-v01",
+              "title": "Машинный регистр",
+              "statement": "Верните [строка в нижнем регистре, строка в верхнем регистре].",
+              "focus": [
+                "lower",
+                "upper"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "lower",
+                "upper"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t03-v01-c01",
+                  "purpose": "смешанный",
+                  "setup_code": "text = 'mOBILE Web'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['mobile web', 'MOBILE WEB']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v01-c02",
+                  "purpose": "кириллица",
+                  "setup_code": "text = 'оПЛАТА кАРТОЙ'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['оплата картой', 'ОПЛАТА КАРТОЙ']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v01-c03",
+                  "purpose": "пустой",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "['', '']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v01-c04",
+                  "purpose": "цифры",
+                  "setup_code": "text = '123 !'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['123 !', '123 !']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v01-c05",
+                  "purpose": "апостроф",
+                  "setup_code": "text = \"user's EVENT\"",
+                  "probe_code": "actual = result",
+                  "expected_python": "[\"user's event\", \"USER'S EVENT\"]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t03-v02",
+              "title": "Заголовки",
+              "statement": "Верните [только первый символ заглавный и остальные строчные, начала слов в титульном регистре]. Используйте правила Python, не правила русского заголовка.",
+              "focus": [
+                "capitalize",
+                "title"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "capitalize",
+                "title"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t03-v02-c01",
+                  "purpose": "смешанный",
+                  "setup_code": "text = 'mOBILE Web'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['Mobile web', 'Mobile Web']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v02-c02",
+                  "purpose": "кириллица",
+                  "setup_code": "text = 'оПЛАТА кАРТОЙ'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['Оплата картой', 'Оплата Картой']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v02-c03",
+                  "purpose": "пустой",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "['', '']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v02-c04",
+                  "purpose": "цифры",
+                  "setup_code": "text = '123 !'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['123 !', '123 !']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v02-c05",
+                  "purpose": "апостроф",
+                  "setup_code": "text = \"user's EVENT\"",
+                  "probe_code": "actual = result",
+                  "expected_python": "[\"User's event\", \"User'S Event\"]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t03-v03",
+              "title": "Сравнение источников",
+              "statement": "Верните логическое значение: совпадают ли a и b после casefold. Пробелы значимы.",
+              "focus": [
+                "casefold"
+              ],
+              "inputs": {
+                "a": "строка",
+                "b": "строка"
+              },
+              "required_constructs": [
+                "casefold"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t03-v03-c01",
+                  "purpose": "обычный",
+                  "setup_code": "a = 'SQL'\nb = 'sql'",
+                  "probe_code": "actual = result",
+                  "expected_python": "True",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v03-c02",
+                  "purpose": "Unicode",
+                  "setup_code": "a = 'Straße'\nb = 'STRASSE'",
+                  "probe_code": "actual = result",
+                  "expected_python": "True",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v03-c03",
+                  "purpose": "различие",
+                  "setup_code": "a = 'sale'\nb = 'sales'",
+                  "probe_code": "actual = result",
+                  "expected_python": "False",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v03-c04",
+                  "purpose": "пустые",
+                  "setup_code": "a = ''\nb = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "True",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v03-c05",
+                  "purpose": "пробелы",
+                  "setup_code": "a = 'sql '\nb = 'sql'",
+                  "probe_code": "actual = result",
+                  "expected_python": "False",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t03-v04",
+              "title": "Диагностический регистр",
+              "statement": "Верните строку с противоположным регистром букв. Цифры и знаки сохраните.",
+              "focus": [
+                "swapcase"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "swapcase"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t03-v04-c01",
+                  "purpose": "смешанный",
+                  "setup_code": "text = 'mOBILE Web'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'Mobile wEB'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v04-c02",
+                  "purpose": "кириллица",
+                  "setup_code": "text = 'оПЛАТА кАРТОЙ'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'Оплата Картой'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v04-c03",
+                  "purpose": "пустой",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "''",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v04-c04",
+                  "purpose": "цифры",
+                  "setup_code": "text = '123 !'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'123 !'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t03-v04-c05",
+                  "purpose": "апостроф",
+                  "setup_code": "text = \"user's EVENT\"",
+                  "probe_code": "actual = result",
+                  "expected_python": "\"USER'S event\"",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t04",
+          "number": 4,
+          "title": "Очистка полей без потери данных",
+          "difficulty": "medium",
+          "context": "Очищайте только описанные части поля: внутренние данные нельзя молча терять.",
+          "textbook_sections": [
+            6
+          ],
+          "variants": [
+            {
+              "id": "ch01-t04-v01",
+              "title": "Пробельные края",
+              "statement": "Верните [очищенная слева строка, очищенная справа строка]. Пробелы внутри не меняйте.",
+              "focus": [
+                "lstrip",
+                "rstrip"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "lstrip",
+                "rstrip"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t04-v01-c01",
+                  "purpose": "две стороны",
+                  "setup_code": "text = '  web  '",
+                  "probe_code": "actual = result",
+                  "expected_python": "['web  ', '  web']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v01-c02",
+                  "purpose": "табы",
+                  "setup_code": "text = '\\tweb\\n'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['web\\n', '\\tweb']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v01-c03",
+                  "purpose": "внутри",
+                  "setup_code": "text = 'a  b'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a  b', 'a  b']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v01-c04",
+                  "purpose": "пустая",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "['', '']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v01-c05",
+                  "purpose": "одни пробелы",
+                  "setup_code": "text = ' \\t '",
+                  "probe_code": "actual = result",
+                  "expected_python": "['', '']",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t04-v02",
+              "title": "Техническая обёртка",
+              "statement": "Уберите с обоих краёв все символы из trim_chars. Это набор отдельных символов, не подстрока.",
+              "focus": [
+                "strip"
+              ],
+              "inputs": {
+                "text": "строка",
+                "trim_chars": "непустая строка"
+              },
+              "required_constructs": [
+                "strip"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t04-v02-c01",
+                  "purpose": "звёзды",
+                  "setup_code": "text = '***app**'\ntrim_chars = '*'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'app'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v02-c02",
+                  "purpose": "набор",
+                  "setup_code": "text = 'abappba'\ntrim_chars = 'ab'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'pp'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v02-c03",
+                  "purpose": "внутренние",
+                  "setup_code": "text = '*a*b*'\ntrim_chars = '*'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'a*b'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v02-c04",
+                  "purpose": "нет совпадений",
+                  "setup_code": "text = 'web'\ntrim_chars = '#'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'web'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v02-c05",
+                  "purpose": "всё удалилось",
+                  "setup_code": "text = '###'\ntrim_chars = '#'",
+                  "probe_code": "actual = result",
+                  "expected_python": "''",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t04-v03",
+              "title": "Ровно один префикс и суффикс",
+              "statement": "Уберите один точный prefix в начале, затем один точный suffix в конце. В середине ничего не удаляйте.",
+              "focus": [
+                "removeprefix",
+                "removesuffix"
+              ],
+              "inputs": {
+                "text": "строка",
+                "prefix": "строка",
+                "suffix": "строка"
+              },
+              "required_constructs": [
+                "removeprefix",
+                "removesuffix"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t04-v03-c01",
+                  "purpose": "два совпадения",
+                  "setup_code": "text = 'raw_report.csv'\nprefix = 'raw_'\nsuffix = '.csv'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'report'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v03-c02",
+                  "purpose": "повторный суффикс",
+                  "setup_code": "text = 'raw_x.csv.csv'\nprefix = 'raw_'\nsuffix = '.csv'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'x.csv'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v03-c03",
+                  "purpose": "нет краёв",
+                  "setup_code": "text = 'x_raw_.csv.txt'\nprefix = 'raw_'\nsuffix = '.csv'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'x_raw_.csv.txt'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v03-c04",
+                  "purpose": "пустое",
+                  "setup_code": "text = ''\nprefix = 'raw_'\nsuffix = '.csv'",
+                  "probe_code": "actual = result",
+                  "expected_python": "''",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v03-c05",
+                  "purpose": "пустые шаблоны",
+                  "setup_code": "text = 'abc'\nprefix = ''\nsuffix = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "'abc'",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t04-v04",
+              "title": "Миграция разделителя",
+              "statement": "Замените не больше limit первых вхождений old на new. old непустой, limit неотрицательный.",
+              "focus": [
+                "replace"
+              ],
+              "inputs": {
+                "text": "строка",
+                "old": "непустая строка",
+                "new": "строка",
+                "limit": "целое 0–10"
+              },
+              "required_constructs": [
+                "replace"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t04-v04-c01",
+                  "purpose": "одна замена",
+                  "setup_code": "text = 'a-b-c'\nold = '-'\nnew = '/'\nlimit = 1",
+                  "probe_code": "actual = result",
+                  "expected_python": "'a/b-c'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v04-c02",
+                  "purpose": "все",
+                  "setup_code": "text = 'a-b-c'\nold = '-'\nnew = '/'\nlimit = 10",
+                  "probe_code": "actual = result",
+                  "expected_python": "'a/b/c'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v04-c03",
+                  "purpose": "ноль",
+                  "setup_code": "text = 'a-b'\nold = '-'\nnew = '/'\nlimit = 0",
+                  "probe_code": "actual = result",
+                  "expected_python": "'a-b'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v04-c04",
+                  "purpose": "удаление",
+                  "setup_code": "text = 'a--b'\nold = '-'\nnew = ''\nlimit = 2",
+                  "probe_code": "actual = result",
+                  "expected_python": "'ab'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v04-c05",
+                  "purpose": "перекрытие",
+                  "setup_code": "text = 'aaaaa'\nold = 'aa'\nnew = 'x'\nlimit = 10",
+                  "probe_code": "actual = result",
+                  "expected_python": "'xxa'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t04-v04-c06",
+                  "purpose": "пустая строка",
+                  "setup_code": "text = ''\nold = 'x'\nnew = 'y'\nlimit = 2",
+                  "probe_code": "actual = result",
+                  "expected_python": "''",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t05",
+          "number": 5,
+          "title": "Маркеры в техническом журнале",
+          "difficulty": "medium",
+          "context": "Положение маркеров и число вхождений нужны для диагностики формата.",
+          "textbook_sections": [
+            7
+          ],
+          "variants": [
+            {
+              "id": "ch01-t05-v01",
+              "title": "Первый и последний",
+              "statement": "Верните [позиция первого, позиция последнего вхождения marker]. При отсутствии на соответствующем месте -1.",
+              "focus": [
+                "find",
+                "rfind"
+              ],
+              "inputs": {
+                "text": "строка",
+                "marker": "строка"
+              },
+              "required_constructs": [
+                "find",
+                "rfind"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t05-v01-c01",
+                  "purpose": "повторы",
+                  "setup_code": "text = 'a|b|c'\nmarker = '|'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[1, 3]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v01-c02",
+                  "purpose": "начало",
+                  "setup_code": "text = 'ERRx'\nmarker = 'ERR'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, 0]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v01-c03",
+                  "purpose": "нет",
+                  "setup_code": "text = 'ok'\nmarker = 'ERR'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[-1, -1]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v01-c04",
+                  "purpose": "пустой маркер",
+                  "setup_code": "text = 'abc'\nmarker = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, 3]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v01-c05",
+                  "purpose": "оба пусты",
+                  "setup_code": "text = ''\nmarker = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, 0]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t05-v02",
+              "title": "Обязательные маркеры",
+              "statement": "Как в предыдущем варианте, но marker гарантированно встречается; получите позиции методами, которые сигнализируют об отсутствии ошибкой.",
+              "focus": [
+                "index",
+                "rindex"
+              ],
+              "inputs": {
+                "text": "строка с marker",
+                "marker": "непустая строка"
+              },
+              "required_constructs": [
+                "index",
+                "rindex"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t05-v02-c01",
+                  "purpose": "один",
+                  "setup_code": "text = 'a:b'\nmarker = ':'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[1, 1]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v02-c02",
+                  "purpose": "повторы",
+                  "setup_code": "text = 'x:x:x'\nmarker = 'x'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, 4]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v02-c03",
+                  "purpose": "полная строка",
+                  "setup_code": "text = 'abc'\nmarker = 'abc'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, 0]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v02-c04",
+                  "purpose": "конец",
+                  "setup_code": "text = 'ok!'\nmarker = '!'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[2, 2]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v02-c05",
+                  "purpose": "перекрытие",
+                  "setup_code": "text = 'aaaa'\nmarker = 'aa'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, 2]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t05-v03",
+              "title": "Частота и тип файла",
+              "statement": "Верните [число неперекрывающихся marker в text, заканчивается ли text на suffix].",
+              "focus": [
+                "count",
+                "endswith"
+              ],
+              "inputs": {
+                "text": "строка",
+                "marker": "строка",
+                "suffix": "строка"
+              },
+              "required_constructs": [
+                "count",
+                "endswith"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t05-v03-c01",
+                  "purpose": "лог",
+                  "setup_code": "text = 'err:err.log'\nmarker = 'err'\nsuffix = '.log'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[2, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v03-c02",
+                  "purpose": "перекрытия",
+                  "setup_code": "text = 'aaaaa'\nmarker = 'aa'\nsuffix = 'a'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[2, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v03-c03",
+                  "purpose": "нет",
+                  "setup_code": "text = 'report.CSV'\nmarker = 'x'\nsuffix = '.csv'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v03-c04",
+                  "purpose": "пустой marker",
+                  "setup_code": "text = 'ab'\nmarker = ''\nsuffix = 'b'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[3, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v03-c05",
+                  "purpose": "пустой text",
+                  "setup_code": "text = ''\nmarker = 'x'\nsuffix = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, True]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t05-v04",
+              "title": "Префикс источника",
+              "statement": "Проверьте, начинается ли text с prefix. Регистр значим.",
+              "focus": [
+                "startswith"
+              ],
+              "inputs": {
+                "text": "строка",
+                "prefix": "строка"
+              },
+              "required_constructs": [
+                "startswith"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t05-v04-c01",
+                  "purpose": "да",
+                  "setup_code": "text = 'web_login'\nprefix = 'web_'",
+                  "probe_code": "actual = result",
+                  "expected_python": "True",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v04-c02",
+                  "purpose": "внутри",
+                  "setup_code": "text = 'old_web_login'\nprefix = 'web_'",
+                  "probe_code": "actual = result",
+                  "expected_python": "False",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v04-c03",
+                  "purpose": "регистр",
+                  "setup_code": "text = 'WEB_login'\nprefix = 'web_'",
+                  "probe_code": "actual = result",
+                  "expected_python": "False",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v04-c04",
+                  "purpose": "пустой префикс",
+                  "setup_code": "text = 'x'\nprefix = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "True",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t05-v04-c05",
+                  "purpose": "пустой текст",
+                  "setup_code": "text = ''\nprefix = 'x'",
+                  "probe_code": "actual = result",
+                  "expected_python": "False",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t06",
+          "number": 6,
+          "title": "Разбор простых выгрузок",
+          "difficulty": "medium",
+          "context": "Это простые форматы без экранирования и кавычек CSV.",
+          "textbook_sections": [
+            8
+          ],
+          "variants": [
+            {
+              "id": "ch01-t06-v01",
+              "title": "Пробелы или точный разделитель",
+              "statement": "Верните [разбиение text по сериям пробельных символов, разбиение text по точной запятой]. Пустые поля при запятой сохраняйте.",
+              "focus": [
+                "split"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "split"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t06-v01-c01",
+                  "purpose": "пробелы",
+                  "setup_code": "text = '  a   b '",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', 'b'], ['  a   b ']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v01-c02",
+                  "purpose": "запятые",
+                  "setup_code": "text = 'a,,b,'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a,,b,'], ['a', '', 'b', '']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v01-c03",
+                  "purpose": "пусто",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[], ['']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v01-c04",
+                  "purpose": "смешанное",
+                  "setup_code": "text = 'a, b, c'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a,', 'b,', 'c'], ['a', ' b', ' c']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v01-c05",
+                  "purpose": "табы",
+                  "setup_code": "text = 'a\\tb\\nc'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', 'b', 'c'], ['a\\tb\\nc']]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t06-v02",
+              "title": "Хвост составного идентификатора",
+              "statement": "Разделите text по последнему разделителю sep не более одного раза. Верните список из одной или двух частей.",
+              "focus": [
+                "rsplit"
+              ],
+              "inputs": {
+                "text": "строка",
+                "sep": "непустая строка"
+              },
+              "required_constructs": [
+                "rsplit"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t06-v02-c01",
+                  "purpose": "несколько",
+                  "setup_code": "text = 'app:screen:event'\nsep = ':'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['app:screen', 'event']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v02-c02",
+                  "purpose": "один",
+                  "setup_code": "text = 'app:event'\nsep = ':'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['app', 'event']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v02-c03",
+                  "purpose": "нет",
+                  "setup_code": "text = 'event'\nsep = ':'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['event']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v02-c04",
+                  "purpose": "хвост пуст",
+                  "setup_code": "text = 'app:'\nsep = ':'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['app', '']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v02-c05",
+                  "purpose": "пустой",
+                  "setup_code": "text = ''\nsep = ':'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['']",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t06-v03",
+              "title": "Строки журнала",
+              "statement": "Верните [список строк без переводов, список строк с сохранением переводов].",
+              "focus": [
+                "splitlines"
+              ],
+              "inputs": {
+                "text": "строка, возможны LF и CRLF"
+              },
+              "required_constructs": [
+                "splitlines"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t06-v03-c01",
+                  "purpose": "LF",
+                  "setup_code": "text = 'a\\nb\\n'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', 'b'], ['a\\n', 'b\\n']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v03-c02",
+                  "purpose": "CRLF",
+                  "setup_code": "text = 'a\\r\\nb'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', 'b'], ['a\\r\\n', 'b']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v03-c03",
+                  "purpose": "пустая строка внутри",
+                  "setup_code": "text = 'a\\n\\nb'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', '', 'b'], ['a\\n', '\\n', 'b']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v03-c04",
+                  "purpose": "одна",
+                  "setup_code": "text = 'a'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a'], ['a']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v03-c05",
+                  "purpose": "пусто",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[], []]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t06-v04",
+              "title": "Сборка идентификатора",
+              "statement": "Соедините parts через separator. Пустые элементы сохраняйте, края не очищайте.",
+              "focus": [
+                "join"
+              ],
+              "inputs": {
+                "parts": "список строк",
+                "separator": "строка"
+              },
+              "required_constructs": [
+                "join"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t06-v04-c01",
+                  "purpose": "обычный",
+                  "setup_code": "parts = ['web', 'login']\nseparator = ':'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'web:login'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v04-c02",
+                  "purpose": "пустой набор",
+                  "setup_code": "parts = []\nseparator = ','",
+                  "probe_code": "actual = result",
+                  "expected_python": "''",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v04-c03",
+                  "purpose": "один",
+                  "setup_code": "parts = ['one']\nseparator = '/'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'one'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v04-c04",
+                  "purpose": "пустые поля",
+                  "setup_code": "parts = ['', 'x', '']\nseparator = '|'",
+                  "probe_code": "actual = result",
+                  "expected_python": "'|x|'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t06-v04-c05",
+                  "purpose": "нет разделителя",
+                  "setup_code": "parts = ['a', 'b']\nseparator = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "'ab'",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t07",
+          "number": 7,
+          "title": "Паспорт качества поля",
+          "difficulty": "medium",
+          "context": "Верните признаки качества без if: методы сами возвращают логические значения.",
+          "textbook_sections": [
+            9,
+            17
+          ],
+          "variants": [
+            {
+              "id": "ch01-t07-v01",
+              "title": "Буквы и идентификатор",
+              "statement": "Верните [результат text.isalpha(), результат text.isidentifier()]. Объяснение бизнес-смысла: два признака будут отдельными столбцами отчёта качества. Не заменяйте Unicode-проверки проверкой только латиницы.",
+              "focus": [
+                "isalpha",
+                "isidentifier"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "isalpha",
+                "isidentifier"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t07-v01-c01",
+                  "purpose": "форма 1",
+                  "setup_code": "text = 'Канал'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v01-c02",
+                  "purpose": "форма 2",
+                  "setup_code": "text = 'user_2'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v01-c03",
+                  "purpose": "форма 3",
+                  "setup_code": "text = '2user'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v01-c04",
+                  "purpose": "форма 4",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v01-c05",
+                  "purpose": "форма 5",
+                  "setup_code": "text = 'a b'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t07-v02",
+              "title": "Буквы с цифрами и ASCII",
+              "statement": "Верните [результат text.isalnum(), результат text.isascii()]. Объяснение бизнес-смысла: два признака будут отдельными столбцами отчёта качества. Не заменяйте Unicode-проверки проверкой только латиницы.",
+              "focus": [
+                "isalnum",
+                "isascii"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "isalnum",
+                "isascii"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t07-v02-c01",
+                  "purpose": "форма 1",
+                  "setup_code": "text = 'A12'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v02-c02",
+                  "purpose": "форма 2",
+                  "setup_code": "text = 'A_12'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v02-c03",
+                  "purpose": "форма 3",
+                  "setup_code": "text = 'Кот'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v02-c04",
+                  "purpose": "форма 4",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v02-c05",
+                  "purpose": "форма 5",
+                  "setup_code": "text = '\\n'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t07-v03",
+              "title": "Десятичные и другие цифры",
+              "statement": "Верните [результат text.isdecimal(), результат text.isdigit()]. Объяснение бизнес-смысла: два признака будут отдельными столбцами отчёта качества. Не заменяйте Unicode-проверки проверкой только латиницы.",
+              "focus": [
+                "isdecimal",
+                "isdigit"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "isdecimal",
+                "isdigit"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t07-v03-c01",
+                  "purpose": "форма 1",
+                  "setup_code": "text = '123'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v03-c02",
+                  "purpose": "форма 2",
+                  "setup_code": "text = '²'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v03-c03",
+                  "purpose": "форма 3",
+                  "setup_code": "text = '-12'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v03-c04",
+                  "purpose": "форма 4",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v03-c05",
+                  "purpose": "форма 5",
+                  "setup_code": "text = '٣'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, True]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t07-v04",
+              "title": "Числовые и пробельные символы",
+              "statement": "Верните [результат text.isnumeric(), результат text.isspace()]. Объяснение бизнес-смысла: два признака будут отдельными столбцами отчёта качества. Не заменяйте Unicode-проверки проверкой только латиницы.",
+              "focus": [
+                "isnumeric",
+                "isspace"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "isnumeric",
+                "isspace"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t07-v04-c01",
+                  "purpose": "форма 1",
+                  "setup_code": "text = '½'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v04-c02",
+                  "purpose": "форма 2",
+                  "setup_code": "text = '3.14'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v04-c03",
+                  "purpose": "форма 3",
+                  "setup_code": "text = ' \\t'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v04-c04",
+                  "purpose": "форма 4",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v04-c05",
+                  "purpose": "форма 5",
+                  "setup_code": "text = '12'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, False]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t07-v05",
+              "title": "Регистр букв",
+              "statement": "Верните [результат text.islower(), результат text.isupper()]. Объяснение бизнес-смысла: два признака будут отдельными столбцами отчёта качества. Не заменяйте Unicode-проверки проверкой только латиницы.",
+              "focus": [
+                "islower",
+                "isupper"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "islower",
+                "isupper"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t07-v05-c01",
+                  "purpose": "форма 1",
+                  "setup_code": "text = 'abc 1'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v05-c02",
+                  "purpose": "форма 2",
+                  "setup_code": "text = 'ABC!'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v05-c03",
+                  "purpose": "форма 3",
+                  "setup_code": "text = 'Abc'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v05-c04",
+                  "purpose": "форма 4",
+                  "setup_code": "text = '123'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v05-c05",
+                  "purpose": "форма 5",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, False]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t07-v06",
+              "title": "Заголовок и печатаемость",
+              "statement": "Верните [результат text.istitle(), результат text.isprintable()]. Объяснение бизнес-смысла: два признака будут отдельными столбцами отчёта качества. Не заменяйте Unicode-проверки проверкой только латиницы.",
+              "focus": [
+                "istitle",
+                "isprintable"
+              ],
+              "inputs": {
+                "text": "строка"
+              },
+              "required_constructs": [
+                "istitle",
+                "isprintable"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t07-v06-c01",
+                  "purpose": "форма 1",
+                  "setup_code": "text = 'Hello World'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v06-c02",
+                  "purpose": "форма 2",
+                  "setup_code": "text = 'hello world'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v06-c03",
+                  "purpose": "форма 3",
+                  "setup_code": "text = 'A\\nB'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[True, False]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v06-c04",
+                  "purpose": "форма 4",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t07-v06-c05",
+                  "purpose": "форма 5",
+                  "setup_code": "text = ' '",
+                  "probe_code": "actual = result",
+                  "expected_python": "[False, True]",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t08",
+          "number": 8,
+          "title": "Читаемые отчёты",
+          "difficulty": "medium",
+          "context": "Подготовьте текстовые поля отчёта по точному контракту оформления.",
+          "textbook_sections": [
+            10,
+            17
+          ],
+          "variants": [
+            {
+              "id": "ch01-t08-v01",
+              "title": "Карточка метрики",
+              "statement": "Верните строку NAME: COUNT (RATE), где NAME=name, COUNT=count, RATE=доля rate в процентах с одним знаком после точки. Например A: 2 (12.5%).",
+              "focus": [
+                "f-строки"
+              ],
+              "inputs": {
+                "name": "строка",
+                "count": "неотрицательное целое",
+                "rate": "число 0–1"
+              },
+              "required_constructs": [
+                "f-строки"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t08-v01-c01",
+                  "purpose": "обычный",
+                  "setup_code": "name = 'A'\ncount = 2\nrate = 0.125",
+                  "probe_code": "actual = result",
+                  "expected_python": "'A: 2 (12.5%)'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v01-c02",
+                  "purpose": "ноль",
+                  "setup_code": "name = 'X'\ncount = 0\nrate = 0",
+                  "probe_code": "actual = result",
+                  "expected_python": "'X: 0 (0.0%)'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v01-c03",
+                  "purpose": "единица",
+                  "setup_code": "name = 'все'\ncount = 10\nrate = 1",
+                  "probe_code": "actual = result",
+                  "expected_python": "'все: 10 (100.0%)'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v01-c04",
+                  "purpose": "половина",
+                  "setup_code": "name = 'web'\ncount = 1\nrate = 0.5",
+                  "probe_code": "actual = result",
+                  "expected_python": "'web: 1 (50.0%)'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v01-c05",
+                  "purpose": "четверть",
+                  "setup_code": "name = ''\ncount = 4\nrate = 0.25",
+                  "probe_code": "actual = result",
+                  "expected_python": "': 4 (25.0%)'",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t08-v02",
+              "title": "Фиксированная ширина",
+              "statement": "Верните [text, дополненный точками справа до width, text, дополненный точками слева до width]. Длинное значение не обрезайте.",
+              "focus": [
+                "ljust",
+                "rjust"
+              ],
+              "inputs": {
+                "text": "строка",
+                "width": "целое 0–12"
+              },
+              "required_constructs": [
+                "ljust",
+                "rjust"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t08-v02-c01",
+                  "purpose": "короче",
+                  "setup_code": "text = 'web'\nwidth = 5",
+                  "probe_code": "actual = result",
+                  "expected_python": "['web..', '..web']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v02-c02",
+                  "purpose": "равно",
+                  "setup_code": "text = 'web'\nwidth = 3",
+                  "probe_code": "actual = result",
+                  "expected_python": "['web', 'web']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v02-c03",
+                  "purpose": "длиннее",
+                  "setup_code": "text = 'mobile'\nwidth = 2",
+                  "probe_code": "actual = result",
+                  "expected_python": "['mobile', 'mobile']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v02-c04",
+                  "purpose": "пусто",
+                  "setup_code": "text = ''\nwidth = 3",
+                  "probe_code": "actual = result",
+                  "expected_python": "['...', '...']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v02-c05",
+                  "purpose": "ноль",
+                  "setup_code": "text = 'x'\nwidth = 0",
+                  "probe_code": "actual = result",
+                  "expected_python": "['x', 'x']",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t08-v03",
+              "title": "Центр и код",
+              "statement": "Верните [label по центру ширины width с заполнителем -, code с нулями слева до ширины width]. Знак code сохраняется перед нулями.",
+              "focus": [
+                "center",
+                "zfill"
+              ],
+              "inputs": {
+                "label": "строка",
+                "code": "строка с целым числом, возможен знак",
+                "width": "целое 0–10"
+              },
+              "required_constructs": [
+                "center",
+                "zfill"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t08-v03-c01",
+                  "purpose": "обычный",
+                  "setup_code": "label = 'ID'\ncode = '7'\nwidth = 5",
+                  "probe_code": "actual = result",
+                  "expected_python": "['--ID-', '00007']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v03-c02",
+                  "purpose": "минус",
+                  "setup_code": "label = 'x'\ncode = '-7'\nwidth = 4",
+                  "probe_code": "actual = result",
+                  "expected_python": "['-x--', '-007']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v03-c03",
+                  "purpose": "плюс",
+                  "setup_code": "label = ''\ncode = '+2'\nwidth = 3",
+                  "probe_code": "actual = result",
+                  "expected_python": "['---', '+02']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v03-c04",
+                  "purpose": "длиннее",
+                  "setup_code": "label = 'long'\ncode = '1234'\nwidth = 2",
+                  "probe_code": "actual = result",
+                  "expected_python": "['long', '1234']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v03-c05",
+                  "purpose": "ноль",
+                  "setup_code": "label = ''\ncode = '0'\nwidth = 0",
+                  "probe_code": "actual = result",
+                  "expected_python": "['', '0']",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t08-v04",
+              "title": "Табы и шаблон",
+              "statement": "Разверните табы text с tabsize. Верните строку ROW=[обработанный текст], используя format.",
+              "focus": [
+                "expandtabs",
+                "format"
+              ],
+              "inputs": {
+                "text": "строка",
+                "tabsize": "целое 1–8"
+              },
+              "required_constructs": [
+                "expandtabs",
+                "format"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t08-v04-c01",
+                  "purpose": "начало",
+                  "setup_code": "text = '\\ta'\ntabsize = 4",
+                  "probe_code": "actual = result",
+                  "expected_python": "'ROW=[    a]'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v04-c02",
+                  "purpose": "после буквы",
+                  "setup_code": "text = 'a\\tb'\ntabsize = 4",
+                  "probe_code": "actual = result",
+                  "expected_python": "'ROW=[a   b]'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v04-c03",
+                  "purpose": "на границе",
+                  "setup_code": "text = 'abcd\\tx'\ntabsize = 4",
+                  "probe_code": "actual = result",
+                  "expected_python": "'ROW=[abcd    x]'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v04-c04",
+                  "purpose": "без табов",
+                  "setup_code": "text = 'abc'\ntabsize = 2",
+                  "probe_code": "actual = result",
+                  "expected_python": "'ROW=[abc]'",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t08-v04-c05",
+                  "purpose": "пусто",
+                  "setup_code": "text = ''\ntabsize = 8",
+                  "probe_code": "actual = result",
+                  "expected_python": "'ROW=[]'",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t09",
+          "number": 9,
+          "title": "Изменение состава отчёта",
+          "difficulty": "medium",
+          "context": "Изменяйте подготовленный список columns; result должен содержать его итоговое состояние.",
+          "textbook_sections": [
+            11,
+            13
+          ],
+          "variants": [
+            {
+              "id": "ch01-t09-v01",
+              "title": "Один столбец и пакет",
+              "statement": "Добавьте value как один элемент, затем элементы batch по отдельности.",
+              "focus": [
+                "append",
+                "extend"
+              ],
+              "inputs": {
+                "columns": "список",
+                "value": "строка или список строк",
+                "batch": "список строк"
+              },
+              "required_constructs": [
+                "append",
+                "extend"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t09-v01-c01",
+                  "purpose": "обычный",
+                  "setup_code": "columns = ['id']\nvalue = 'date'\nbatch = ['country', 'device']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['id', 'date', 'country', 'device']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t09-v01-c02",
+                  "purpose": "вложенный",
+                  "setup_code": "columns = []\nvalue = ['a', 'b']\nbatch = ['c']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', 'b'], 'c']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t09-v01-c03",
+                  "purpose": "пустой пакет",
+                  "setup_code": "columns = ['x']\nvalue = 'y'\nbatch = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "['x', 'y']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t09-v01-c04",
+                  "purpose": "пустой объект",
+                  "setup_code": "columns = []\nvalue = []\nbatch = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t09-v01-c05",
+                  "purpose": "повторы",
+                  "setup_code": "columns = ['a']\nvalue = 'a'\nbatch = ['a']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a', 'a', 'a']",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t09-v02",
+              "title": "Вставка и замена диапазона",
+              "statement": "Вставьте new_field перед index; затем в уже изменённом списке замените позиции start:stop значениями replacement.",
+              "focus": [
+                "insert",
+                "присваивание срезу"
+              ],
+              "inputs": {
+                "columns": "список строк",
+                "index": "целое",
+                "new_field": "строка",
+                "start": "неотрицательное целое",
+                "stop": "неотрицательное целое",
+                "replacement": "список строк"
+              },
+              "required_constructs": [
+                "insert",
+                "присваивание срезу"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t09-v02-c01",
+                  "purpose": "середина",
+                  "setup_code": "columns = ['a', 'c']\nindex = 1\nnew_field = 'b'\nstart = 2\nstop = 3\nreplacement = ['d', 'e']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a', 'b', 'd', 'e']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t09-v02-c02",
+                  "purpose": "в пустой",
+                  "setup_code": "columns = []\nindex = 5\nnew_field = 'a'\nstart = 1\nstop = 1\nreplacement = ['b']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a', 'b']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t09-v02-c03",
+                  "purpose": "удалить часть",
+                  "setup_code": "columns = ['a', 'b']\nindex = 0\nnew_field = 'x'\nstart = 0\nstop = 2\nreplacement = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "['b']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t09-v02-c04",
+                  "purpose": "большой индекс",
+                  "setup_code": "columns = ['a']\nindex = 99\nnew_field = 'z'\nstart = 9\nstop = 10\nreplacement = ['q']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a', 'z', 'q']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t09-v02-c05",
+                  "purpose": "отрицательный",
+                  "setup_code": "columns = ['a', 'b']\nindex = -1\nnew_field = 'x'\nstart = 0\nstop = 1\nreplacement = ['n']",
+                  "probe_code": "actual = result",
+                  "expected_python": "['n', 'x', 'b']",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t10",
+          "number": 10,
+          "title": "Удаление и поиск столбцов",
+          "difficulty": "medium",
+          "context": "Вход гарантирует наличие обязательного поля и допустимость индекса.",
+          "textbook_sections": [
+            12
+          ],
+          "variants": [
+            {
+              "id": "ch01-t10-v01",
+              "title": "Удаление по смыслу и позиции",
+              "statement": "Удалите первое вхождение field, затем извлеките элемент с индексом index из изменённого списка. Верните [извлечённый элемент, остаток].",
+              "focus": [
+                "remove",
+                "pop"
+              ],
+              "inputs": {
+                "columns": "список строк",
+                "field": "встречается в columns",
+                "index": "допустим после remove"
+              },
+              "required_constructs": [
+                "remove",
+                "pop"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t10-v01-c01",
+                  "purpose": "обычный",
+                  "setup_code": "columns = ['tmp', 'id', 'date']\nfield = 'tmp'\nindex = 0",
+                  "probe_code": "actual = result",
+                  "expected_python": "['id', ['date']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v01-c02",
+                  "purpose": "повтор",
+                  "setup_code": "columns = ['x', 'x', 'a']\nfield = 'x'\nindex = -1",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a', ['x']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v01-c03",
+                  "purpose": "два",
+                  "setup_code": "columns = ['a', 'b']\nfield = 'a'\nindex = 0",
+                  "probe_code": "actual = result",
+                  "expected_python": "['b', []]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v01-c04",
+                  "purpose": "край",
+                  "setup_code": "columns = ['a', 'b', 'c', 'd']\nfield = 'c'\nindex = -1",
+                  "probe_code": "actual = result",
+                  "expected_python": "['d', ['a', 'b']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v01-c05",
+                  "purpose": "пустое имя",
+                  "setup_code": "columns = ['', 'id', '']\nfield = ''\nindex = 1",
+                  "probe_code": "actual = result",
+                  "expected_python": "['', ['id']]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t10-v02",
+              "title": "Сколько и где",
+              "statement": "Верните [число вхождений field, индекс первого вхождения]. field встречается хотя бы раз.",
+              "focus": [
+                "list.count",
+                "list.index"
+              ],
+              "inputs": {
+                "columns": "список строк",
+                "field": "строка"
+              },
+              "required_constructs": [
+                "list.count",
+                "list.index"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t10-v02-c01",
+                  "purpose": "один",
+                  "setup_code": "columns = ['a']\nfield = 'a'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[1, 0]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v02-c02",
+                  "purpose": "повторы",
+                  "setup_code": "columns = ['b', 'a', 'a']\nfield = 'a'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[2, 1]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v02-c03",
+                  "purpose": "пустое",
+                  "setup_code": "columns = ['', 'x', '']\nfield = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[2, 0]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v02-c04",
+                  "purpose": "последний",
+                  "setup_code": "columns = ['a', 'b', 'c']\nfield = 'c'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[1, 2]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v02-c05",
+                  "purpose": "регистр",
+                  "setup_code": "columns = ['A', 'a']\nfield = 'a'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[1, 1]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t10-v03",
+              "title": "Убрать технический диапазон",
+              "statement": "Удалите columns[start:stop], затем очистите scratch на месте. Верните [columns, scratch].",
+              "focus": [
+                "del",
+                "clear"
+              ],
+              "inputs": {
+                "columns": "список строк",
+                "start": "неотрицательное целое",
+                "stop": "неотрицательное целое",
+                "scratch": "список"
+              },
+              "required_constructs": [
+                "del",
+                "clear"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t10-v03-c01",
+                  "purpose": "середина",
+                  "setup_code": "columns = ['a', 'x', 'b']\nstart = 1\nstop = 2\nscratch = [1]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', 'b'], []]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v03-c02",
+                  "purpose": "всё",
+                  "setup_code": "columns = ['a']\nstart = 0\nstop = 9\nscratch = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[], []]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v03-c03",
+                  "purpose": "пустое",
+                  "setup_code": "columns = []\nstart = 0\nstop = 1\nscratch = ['x']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[], []]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v03-c04",
+                  "purpose": "нет диапазона",
+                  "setup_code": "columns = ['a', 'b']\nstart = 1\nstop = 1\nscratch = [1, 2]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', 'b'], []]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t10-v03-c05",
+                  "purpose": "за границей",
+                  "setup_code": "columns = ['a']\nstart = 4\nstop = 8\nscratch = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a'], []]",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t11",
+          "number": 11,
+          "title": "Порядок и независимые копии",
+          "difficulty": "medium",
+          "context": "Служебная обработка не должна случайно портить исходный план.",
+          "textbook_sections": [
+            14,
+            15
+          ],
+          "variants": [
+            {
+              "id": "ch01-t11-v01",
+              "title": "Два способа сортировки",
+              "statement": "Создайте возрастающую копию numbers через sorted; затем отсортируйте исходный numbers по убыванию на месте. Верните [копия, numbers].",
+              "focus": [
+                "sorted",
+                "sort"
+              ],
+              "inputs": {
+                "numbers": "список целых"
+              },
+              "required_constructs": [
+                "sorted",
+                "sort"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t11-v01-c01",
+                  "purpose": "смешанные",
+                  "setup_code": "numbers = [3, -1, 2]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[-1, 2, 3], [3, 2, -1]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v01-c02",
+                  "purpose": "пусто",
+                  "setup_code": "numbers = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[], []]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v01-c03",
+                  "purpose": "один",
+                  "setup_code": "numbers = [7]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[7], [7]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v01-c04",
+                  "purpose": "повторы",
+                  "setup_code": "numbers = [2, 2, 1]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[1, 2, 2], [2, 2, 1]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v01-c05",
+                  "purpose": "уже порядок",
+                  "setup_code": "numbers = [1, 2, 3]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[1, 2, 3], [3, 2, 1]]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t11-v02",
+              "title": "Обратный маршрут",
+              "statement": "Скопируйте route, разверните копию на месте и верните [исходный route, копия].",
+              "focus": [
+                "copy",
+                "reverse"
+              ],
+              "inputs": {
+                "route": "список строк"
+              },
+              "required_constructs": [
+                "copy",
+                "reverse"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t11-v02-c01",
+                  "purpose": "три",
+                  "setup_code": "route = ['view', 'cart', 'pay']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['view', 'cart', 'pay'], ['pay', 'cart', 'view']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v02-c02",
+                  "purpose": "пусто",
+                  "setup_code": "route = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[], []]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v02-c03",
+                  "purpose": "один",
+                  "setup_code": "route = ['view']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['view'], ['view']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v02-c04",
+                  "purpose": "повторы",
+                  "setup_code": "route = ['x', 'x']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['x', 'x'], ['x', 'x']]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v02-c05",
+                  "purpose": "четыре",
+                  "setup_code": "route = ['a', 'b', 'c', 'd']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['a', 'b', 'c', 'd'], ['d', 'c', 'b', 'a']]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t11-v03",
+              "title": "Независимые строки матрицы",
+              "statement": "matrix содержит ровно два списка. Получите копию обоих внутренних списков, замените первый элемент первой строки на value. Верните [matrix, новая матрица].",
+              "focus": [
+                "поверхностная копия",
+                "вложенные ссылки"
+              ],
+              "inputs": {
+                "matrix": "два непустых списка целых",
+                "value": "целое"
+              },
+              "required_constructs": [
+                "поверхностная копия",
+                "вложенные ссылки"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t11-v03-c01",
+                  "purpose": "обычно",
+                  "setup_code": "matrix = [[1, 2], [3, 4]]\nvalue = 9",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[[1, 2], [3, 4]], [[9, 2], [3, 4]]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v03-c02",
+                  "purpose": "короткие",
+                  "setup_code": "matrix = [[0], [0]]\nvalue = 1",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[[0], [0]], [[1], [0]]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v03-c03",
+                  "purpose": "совпадает",
+                  "setup_code": "matrix = [[5], [6]]\nvalue = 5",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[[5], [6]], [[5], [6]]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v03-c04",
+                  "purpose": "разные длины",
+                  "setup_code": "matrix = [[1], [2, 3]]\nvalue = -1",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[[1], [2, 3]], [[-1], [2, 3]]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v03-c05",
+                  "purpose": "минус",
+                  "setup_code": "matrix = [[-2, -3], [-4]]\nvalue = 0",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[[-2, -3], [-4]], [[0, -3], [-4]]]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t11-v04",
+              "title": "Изменение через общую ссылку",
+              "statement": "В начале alias ссылается на тот же список values. Выполните values += extra, затем values *= repeats, затем values = values + tail. Верните [alias, values].",
+              "focus": [
+                "+=",
+                "*="
+              ],
+              "inputs": {
+                "values": "список целых",
+                "extra": "список целых",
+                "repeats": "целое 0–3",
+                "tail": "список целых"
+              },
+              "required_constructs": [
+                "+=",
+                "*="
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t11-v04-c01",
+                  "purpose": "обычно",
+                  "setup_code": "values = [1]\nextra = [2]\nrepeats = 2\ntail = [3]\nalias = values",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[1, 2, 1, 2], [1, 2, 1, 2, 3]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v04-c02",
+                  "purpose": "обнуление",
+                  "setup_code": "values = [1]\nextra = []\nrepeats = 0\ntail = [9]\nalias = values",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[], [9]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v04-c03",
+                  "purpose": "пустые",
+                  "setup_code": "values = []\nextra = []\nrepeats = 2\ntail = []\nalias = values",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[], []]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v04-c04",
+                  "purpose": "один повтор",
+                  "setup_code": "values = [4]\nextra = [5]\nrepeats = 1\ntail = []\nalias = values",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[4, 5], [4, 5]]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t11-v04-c05",
+                  "purpose": "повторы",
+                  "setup_code": "values = [1, 1]\nextra = [1]\nrepeats = 3\ntail = [0]\nalias = values",
+                  "probe_code": "actual = result",
+                  "expected_python": "[[1, 1, 1, 1, 1, 1, 1, 1, 1], [1, 1, 1, 1, 1, 1, 1, 1, 1, 0]]",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t12",
+          "number": 12,
+          "title": "Краткая сводка и Unicode",
+          "difficulty": "medium",
+          "context": "Контрольные поля помогают обнаружить неверную кодировку и структуру выгрузки.",
+          "textbook_sections": [
+            16,
+            18
+          ],
+          "variants": [
+            {
+              "id": "ch01-t12-v01",
+              "title": "Диапазон значений",
+              "statement": "Верните [минимум, максимум] непустого списка numbers.",
+              "focus": [
+                "min",
+                "max"
+              ],
+              "inputs": {
+                "numbers": "непустой список целых"
+              },
+              "required_constructs": [
+                "min",
+                "max"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t12-v01-c01",
+                  "purpose": "разные",
+                  "setup_code": "numbers = [3, 1, 8]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[1, 8]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v01-c02",
+                  "purpose": "один",
+                  "setup_code": "numbers = [0]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, 0]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v01-c03",
+                  "purpose": "отрицательные",
+                  "setup_code": "numbers = [-3, -1]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[-3, -1]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v01-c04",
+                  "purpose": "одинаковые",
+                  "setup_code": "numbers = [2, 2, 2]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[2, 2]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v01-c05",
+                  "purpose": "границы",
+                  "setup_code": "numbers = [-100, 100]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[-100, 100]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t12-v02",
+              "title": "Сумма и остаток распаковки",
+              "statement": "numbers непустой. Распакуйте первый элемент и список остальных. Верните [первый, остальные, сумма всех].",
+              "focus": [
+                "распаковка со *",
+                "sum"
+              ],
+              "inputs": {
+                "numbers": "непустой список целых"
+              },
+              "required_constructs": [
+                "распаковка со *",
+                "sum"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t12-v02-c01",
+                  "purpose": "несколько",
+                  "setup_code": "numbers = [2, 3, 4]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[2, [3, 4], 9]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v02-c02",
+                  "purpose": "один",
+                  "setup_code": "numbers = [0]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, [], 0]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v02-c03",
+                  "purpose": "отрицательные",
+                  "setup_code": "numbers = [-1, -2]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[-1, [-2], -3]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v02-c04",
+                  "purpose": "нули",
+                  "setup_code": "numbers = [0, 0, 0]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, [0, 0], 0]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v02-c05",
+                  "purpose": "компенсация",
+                  "setup_code": "numbers = [100, -100]",
+                  "probe_code": "actual = result",
+                  "expected_python": "[100, [-100], 0]",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t12-v03",
+              "title": "Символ и его код",
+              "statement": "symbol содержит ровно одну кодовую точку. Верните [её код, символ для codepoint].",
+              "focus": [
+                "ord",
+                "chr"
+              ],
+              "inputs": {
+                "symbol": "одна кодовая точка",
+                "codepoint": "целое от 0 до 0x10FFFF, без суррогатов"
+              },
+              "required_constructs": [
+                "ord",
+                "chr"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t12-v03-c01",
+                  "purpose": "латиница",
+                  "setup_code": "symbol = 'A'\ncodepoint = 66",
+                  "probe_code": "actual = result",
+                  "expected_python": "[65, 'B']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v03-c02",
+                  "purpose": "кириллица",
+                  "setup_code": "symbol = 'Я'\ncodepoint = 1040",
+                  "probe_code": "actual = result",
+                  "expected_python": "[1071, 'А']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v03-c03",
+                  "purpose": "пробел",
+                  "setup_code": "symbol = ' '\ncodepoint = 32",
+                  "probe_code": "actual = result",
+                  "expected_python": "[32, ' ']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v03-c04",
+                  "purpose": "эмодзи",
+                  "setup_code": "symbol = '😀'\ncodepoint = 128512",
+                  "probe_code": "actual = result",
+                  "expected_python": "[128512, '😀']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v03-c05",
+                  "purpose": "перевод",
+                  "setup_code": "symbol = '\\n'\ncodepoint = 9",
+                  "probe_code": "actual = result",
+                  "expected_python": "[10, '\\t']",
+                  "expected_stdout": ""
+                }
+              ]
+            },
+            {
+              "id": "ch01-t12-v04",
+              "title": "Длина в символах и байтах",
+              "statement": "Закодируйте text в UTF-8. Верните [число кодовых точек, число байтов, декодированный обратно текст].",
+              "focus": [
+                "encode/decode",
+                "len"
+              ],
+              "inputs": {
+                "text": "строка без суррогатов"
+              },
+              "required_constructs": [
+                "encode/decode",
+                "len"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t12-v04-c01",
+                  "purpose": "ASCII",
+                  "setup_code": "text = 'abc'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[3, 3, 'abc']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v04-c02",
+                  "purpose": "кириллица",
+                  "setup_code": "text = 'кот'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[3, 6, 'кот']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v04-c03",
+                  "purpose": "пусто",
+                  "setup_code": "text = ''",
+                  "probe_code": "actual = result",
+                  "expected_python": "[0, 0, '']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v04-c04",
+                  "purpose": "составной",
+                  "setup_code": "text = 'é'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[2, 3, 'é']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t12-v04-c05",
+                  "purpose": "эмодзи",
+                  "setup_code": "text = '😀'",
+                  "probe_code": "actual = result",
+                  "expected_python": "[1, 4, '😀']",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t13",
+          "number": 13,
+          "title": "Карточка ежедневной выгрузки",
+          "difficulty": "complex",
+          "context": "Продуктовый аналитик получил одну строку отчёта с тремя целыми счётчиками.",
+          "textbook_sections": [
+            6,
+            8,
+            10,
+            16
+          ],
+          "variants": [
+            {
+              "id": "ch01-t13-v01",
+              "title": "Сводка по фиксированной схеме",
+              "statement": "raw имеет вид « имя | показы | клики | заказы ». Ровно четыре поля, имя непустое после удаления краевых пробелов, счётчики — неотрицательные целые в десятичной записи. Верните [имя в нижнем регистре, сумма трёх счётчиков, максимум, строка «имя: показы/клики/заказы»]. В итоговой строке у чисел не должно быть ведущих нулей. Сумма здесь техническая контрольная сумма, не число уникальных пользователей. Циклы и условия запрещены.",
+              "focus": [
+                "разбор строки",
+                "очистка",
+                "преобразование чисел",
+                "форматирование"
+              ],
+              "inputs": {
+                "raw": "строка описанного формата"
+              },
+              "required_constructs": [
+                "разбор строки",
+                "очистка",
+                "преобразование чисел",
+                "форматирование"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t13-v01-c01",
+                  "purpose": "обычный",
+                  "setup_code": "raw = ' WEB | 100 | 20 | 3 '",
+                  "probe_code": "actual = result",
+                  "expected_python": "['web', 123, 100, 'web: 100/20/3']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t13-v01-c02",
+                  "purpose": "нули",
+                  "setup_code": "raw = 'app|0|0|0'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['app', 0, 0, 'app: 0/0/0']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t13-v01-c03",
+                  "purpose": "ведущие нули",
+                  "setup_code": "raw = ' Email | 0010|02|1'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['email', 13, 10, 'email: 10/2/1']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t13-v01-c04",
+                  "purpose": "кириллица",
+                  "setup_code": "raw = ' БОТ |5|5|5'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['бот', 15, 5, 'бот: 5/5/5']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t13-v01-c05",
+                  "purpose": "максимум справа",
+                  "setup_code": "raw = 'test|1|2|99'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['test', 102, 99, 'test: 1/2/99']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t13-v01-c06",
+                  "purpose": "внутренний пробел",
+                  "setup_code": "raw = ' Mobile Web |8|2|1'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['mobile web', 11, 8, 'mobile web: 8/2/1']",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t14",
+          "number": 14,
+          "title": "Безопасная версия схемы",
+          "difficulty": "complex",
+          "context": "Системный аналитик готовит новую версию схемы, сохраняя исходную для сравнения.",
+          "textbook_sections": [
+            11,
+            12,
+            13,
+            14,
+            15
+          ],
+          "variants": [
+            {
+              "id": "ch01-t14-v01",
+              "title": "Обновлённый контракт",
+              "statement": "Скопируйте columns. В копии замените позицию 0 на «event_id», удалите первое вхождение legacy, добавьте extra по отдельности, разверните полученный список. Верните [исходный columns, результат, длина результата]. columns непустой; legacy гарантированно встречается после позиции 0 и отличается от event_id. extra — список строк. Исходник должен остаться неизменным.",
+              "focus": [
+                "copy",
+                "индекс",
+                "remove",
+                "extend",
+                "reverse"
+              ],
+              "inputs": {
+                "columns": "список строк по ограничениям",
+                "legacy": "строка",
+                "extra": "список строк"
+              },
+              "required_constructs": [
+                "copy",
+                "индекс",
+                "remove",
+                "extend",
+                "reverse"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t14-v01-c01",
+                  "purpose": "обычно",
+                  "setup_code": "columns = ['id', 'old', 'date']\nlegacy = 'old'\nextra = ['country']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['id', 'old', 'date'], ['country', 'date', 'event_id'], 3]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t14-v01-c02",
+                  "purpose": "минимум",
+                  "setup_code": "columns = ['id', 'old']\nlegacy = 'old'\nextra = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['id', 'old'], ['event_id'], 1]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t14-v01-c03",
+                  "purpose": "повторы",
+                  "setup_code": "columns = ['id', 'old', 'old']\nlegacy = 'old'\nextra = []",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['id', 'old', 'old'], ['old', 'event_id'], 2]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t14-v01-c04",
+                  "purpose": "пустое доп поле",
+                  "setup_code": "columns = ['x', 'tmp']\nlegacy = 'tmp'\nextra = ['']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['x', 'tmp'], ['', 'event_id'], 2]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t14-v01-c05",
+                  "purpose": "уже правильный id",
+                  "setup_code": "columns = ['event_id', 'date', 'old']\nlegacy = 'old'\nextra = ['a', 'b']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['event_id', 'date', 'old'], ['b', 'a', 'date', 'event_id'], 4]",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t14-v01-c06",
+                  "purpose": "дубликат в extra",
+                  "setup_code": "columns = ['i', 'x', 'a']\nlegacy = 'x'\nextra = ['a']",
+                  "probe_code": "actual = result",
+                  "expected_python": "[['i', 'x', 'a'], ['a', 'a', 'event_id'], 3]",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "ch01-t15",
+          "number": 15,
+          "title": "Сопоставление двух источников",
+          "difficulty": "complex",
+          "context": "Нужно подготовить диагностическую запись, пока известны только операции со строками и списками.",
+          "textbook_sections": [
+            4,
+            5,
+            6,
+            7,
+            8
+          ],
+          "variants": [
+            {
+              "id": "ch01-t15-v01",
+              "title": "Нормализованный ключ",
+              "statement": "Для raw_a и raw_b выполните strip, удалите один префикс «src:», затем casefold. Верните [нормализованный a, нормализованный b, равны ли они, сколько неперекрывающихся «/» в a, последние три символа a в обратном порядке]. Отсутствующий префикс допустим; пустые строки допустимы. Префикс удаляется до casefold, поэтому «SRC:» не удаляется.",
+              "focus": [
+                "strip",
+                "removeprefix",
+                "casefold",
+                "count",
+                "срезы"
+              ],
+              "inputs": {
+                "raw_a": "строка",
+                "raw_b": "строка"
+              },
+              "required_constructs": [
+                "strip",
+                "removeprefix",
+                "casefold",
+                "count",
+                "срезы"
+              ],
+              "manual_review": [],
+              "contract": {
+                "submission": "python_fragment",
+                "result_variable": "result"
+              },
+              "tests": [
+                {
+                  "id": "ch01-t15-v01-c01",
+                  "purpose": "равенство",
+                  "setup_code": "raw_a = ' src:Web/Pay '\nraw_b = 'web/pay'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['web/pay', 'web/pay', True, 1, 'yap']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t15-v01-c02",
+                  "purpose": "пустые",
+                  "setup_code": "raw_a = 'src:'\nraw_b = ' '",
+                  "probe_code": "actual = result",
+                  "expected_python": "['', '', True, 0, '']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t15-v01-c03",
+                  "purpose": "Unicode",
+                  "setup_code": "raw_a = 'src:Straße'\nraw_b = 'STRASSE'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['strasse', 'strasse', True, 0, 'ess']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t15-v01-c04",
+                  "purpose": "регистр префикса",
+                  "setup_code": "raw_a = 'SRC:x'\nraw_b = 'x'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['src:x', 'x', False, 0, 'x:c']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t15-v01-c05",
+                  "purpose": "короткая",
+                  "setup_code": "raw_a = 'src:a'\nraw_b = 'src:b'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a', 'b', False, 0, 'a']",
+                  "expected_stdout": ""
+                },
+                {
+                  "id": "ch01-t15-v01-c06",
+                  "purpose": "два разделителя",
+                  "setup_code": "raw_a = 'a//b'\nraw_b = 'a/b'",
+                  "probe_code": "actual = result",
+                  "expected_python": "['a//b', 'a/b', False, 2, 'b//']",
+                  "expected_stdout": ""
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "coverage_by_section": {
+        "1": [
+          "ch01-t01"
+        ],
+        "2": [
+          "ch01-t01"
+        ],
+        "3": [
+          "ch01-t02"
+        ],
+        "4": [
+          "ch01-t02",
+          "ch01-t15"
+        ],
+        "5": [
+          "ch01-t03",
+          "ch01-t15"
+        ],
+        "6": [
+          "ch01-t04",
+          "ch01-t13",
+          "ch01-t15"
+        ],
+        "7": [
+          "ch01-t05",
+          "ch01-t15"
+        ],
+        "8": [
+          "ch01-t06",
+          "ch01-t13",
+          "ch01-t15"
+        ],
+        "9": [
+          "ch01-t07"
+        ],
+        "10": [
+          "ch01-t08",
+          "ch01-t13"
+        ],
+        "11": [
+          "ch01-t09",
+          "ch01-t14"
+        ],
+        "12": [
+          "ch01-t10",
+          "ch01-t14"
+        ],
+        "13": [
+          "ch01-t09",
+          "ch01-t14"
+        ],
+        "14": [
+          "ch01-t11",
+          "ch01-t14"
+        ],
+        "15": [
+          "ch01-t11",
+          "ch01-t14"
+        ],
+        "16": [
+          "ch01-t12",
+          "ch01-t13"
+        ],
+        "17": [
+          "ch01-t07",
+          "ch01-t08"
+        ],
+        "18": [
+          "ch01-t12"
+        ]
+      }
+    }
+  ]
+}
