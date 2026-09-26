@@ -9,10 +9,38 @@
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="./" aria-label="Python Практика, начало"><span class="brand-mark">py</span><span>Python <span class="brand-slash">/</span> <strong>Практика</strong></span></a>
-  <div class="top-meta"><span class="course-label">ДЛЯ АНАЛИТИКА</span><span id="runtime" class="runtime"><i></i>Python загружается</span></div>
+  <nav class="brand" aria-label="Разделы сайта"><a href="#courses" class="brand-mark" aria-label="Выбор курса">py</a><span>Python</span><span class="brand-slash">/</span><a href="#courses" id="practice-link">Практика</a><span class="brand-slash">/</span><a href="#theory" id="theory-link">Теория</a></nav>
+  <div class="top-meta"><span id="account-name" hidden></span><button id="logout" class="text-button" hidden>Выйти</button><span id="runtime" class="runtime" hidden><i></i>Python загружается</span></div>
 </header>
-<div class="workspace">
+<section id="auth-screen" class="landing-screen">
+  <form id="auth-form" class="auth-card panel">
+    <span class="eyebrow">ТВОЯ ПРАКТИКА PYTHON</span><h1>С возвращением</h1><p>Войди по имени, чтобы продолжить с того места, где остановился.</p>
+    <label for="username">Имя пользователя</label><input id="username" name="username" maxlength="40" autocomplete="username" placeholder="Например, Алексей" required>
+    <p id="auth-error" class="form-error" role="alert" hidden></p>
+    <div class="auth-buttons"><button id="login" type="submit" class="primary">Войти</button><button id="register" type="button" class="secondary">Зарегистрироваться</button></div>
+    <p class="auth-note">Без пароля — используй своё имя, чтобы открывать свой прогресс.</p>
+  </form>
+</section>
+<section id="courses-screen" class="landing-screen" hidden>
+  <div class="course-list"><span class="eyebrow">ПРАКТИКА</span><h1>Выбери курс</h1>
+    <article class="course-card panel"><div class="course-card-top"><h2>Основы Python</h2><span id="course-count" class="course-count">0 / 163</span></div>
+      <p>Строки и списки, условия, циклы while и for, коллекции и функции. Задачи из работы системного и продуктового аналитика.</p>
+      <div class="course-progress"><progress id="course-progress" max="163" value="0" aria-label="Прогресс курса"></progress><strong id="course-percent">0%</strong></div>
+      <div class="course-card-bottom"><span id="course-next">Начни с первого задания</span><button id="open-course" class="primary">Продолжить курс →</button></div>
+    </article>
+  </div>
+</section>
+<section id="theory-screen" class="landing-screen" hidden>
+  <div class="course-list"><span class="eyebrow">ТЕОРИЯ</span><h1>Учебные материалы</h1>
+    <article class="course-card panel"><div class="course-card-top"><h2>Основы Python</h2><span class="chip">PDF · 83 страницы</span></div>
+      <p>Шесть глав: строки и списки; условия; цикл while; итерируемые объекты и цикл for; None, словари, множества и кортежи; функции.</p>
+      <p>Операторы и методы, правила использования и примеры с разными входными значениями.</p>
+      <a id="download-theory" class="primary download-button" href="https://drive.google.com/uc?export=download&amp;id=1qv5U9AH1pxlq11hQvawIj5xLgPpbzcdC" target="_blank" rel="noopener" download>Скачать теорию ↓</a>
+    </article>
+  </div>
+</section>
+<div id="save-notice" class="save-notice" hidden><span id="save-message" role="status"></span><button id="retry-save" class="text-button" hidden>Повторить сохранение</button></div>
+<div id="practice-screen" class="workspace" hidden>
   <aside class="sidebar" aria-label="Выбор темы и задачи">
     <label class="eyebrow" for="chapter">ТЕМА</label>
     <select id="chapter" aria-label="Тема"><option>Строки и списки</option></select>
@@ -43,6 +71,7 @@
           <div class="editor-bottom"><span id="cursor">Строка 1, столбец 1</span><span>Tab — отступ · Esc — выйти</span></div>
           <div class="run-bar"><span id="run-hint">Ctrl + Enter — проверить</span><button id="stop" class="secondary" hidden>Остановить</button><button id="run" class="primary" disabled><span>▷</span> Проверить решение</button></div>
         </section>
+        <section id="solution-panel" class="solution-panel panel" hidden><h2>Пример решения</h2><p>Один из способов решить этот вариант с помощью изученных операций.</p><pre><code id="solution-code"></code></pre></section>
         <section class="results panel" aria-labelledby="results-title"><div class="results-heading"><h2 id="results-title">Результат проверки</h2><span id="result-count" class="subtle"></span></div><div id="results" aria-live="polite"><div class="empty-result"><span class="terminal-symbol">&gt;_</span><p>Здесь появится результат</p><span>Запусти код, чтобы проверить его на всех тестах.</span></div></div></section>
         <section id="joke-panel" class="joke-panel panel" aria-labelledby="joke-title" aria-live="polite" hidden>
           <div class="joke-top"><span class="joke-label">АНЕКДОТ КАТЕГОРИИ Б</span><span id="joke-number"></span></div>

@@ -22,6 +22,7 @@ function visibleInputs(test, v) {
   return lines.join('\n')||test.setup_code;
 }
 function selectChapter(index, ti=0, vi=0) {
+  if(!auth)return;
   if(!bank.chapters[index]?.tasks[ti]?.variants[vi])return;
   saveDraft(); selectionReady=false;
   chapterIndex=index; tasks=bank.chapters[index].tasks;
@@ -57,11 +58,13 @@ function renderNav() {
     const button=node('button',undefined,'nav-item'+(i===taskIndex?' active':''));
     if(i===taskIndex) button.setAttribute('aria-current','true');
     button.append(node('span',String(i+1).padStart(2,'0'),'nav-num'),node('span',task.title));
-    if(task.variants.every(v=>reports.get(v.id)?.status==='passed')) button.append(node('span','✓','nav-check'));
+    if(task.variants.every(v=>progress[v.id]?.solved)) button.append(node('span','✓','nav-check'));
     button.addEventListener('click',()=>selectTask(i,0)); $('task-nav').append(button);
   });
 }
 function selectTask(ti,vi=0) {
+  if(!auth)return;
+  showScreen('practice');
   if(!tasks[ti]?.variants[vi]) return;
   stopFire();
   saveDraft(); if(running) cancelRun(false);
@@ -82,7 +85,7 @@ function selectTask(ti,vi=0) {
   $('position').textContent=`${position+1} / ${total}`;
   $('variants').replaceChildren();
   task.variants.forEach((variant,i)=>{
-    const button=node('button',`${i+1}. ${variant.title}`,'variant-tab');
+    const button=node('button',`${i+1}. ${variant.title}`,'variant-tab'+(progress[variant.id]?.solved?' is-solved':''));
     button.setAttribute('role','tab'); button.setAttribute('aria-selected',String(i===vi));
     button.addEventListener('click',()=>selectTask(ti,i));
     button.addEventListener('keydown',(event)=>{
@@ -125,6 +128,7 @@ function jumpToLine(line) {
   editor.focus();editor.setSelectionRange(start,start+(lines[line-1]?.length??0));editor.scrollTop=Math.max(0,(line-4)*23);updateEditor();
 }
 function renderReport(report) {
+  renderSolution();
   const joke=jokes.find(item=>item.taskId===tasks[taskIndex]?.id);
   $('joke-panel').hidden=report?.status!=='passed'||!joke;
   if(report?.status==='passed'&&joke){
@@ -176,6 +180,7 @@ function initWorker() {
     if(data.type==='loading-error')engineFailure('Не удалось загрузить Python. Проверь интернет и нажми «Подключить Python».');
     if(data.type==='result'){
       clearTimeout(timer);running=false;
+      finishAttempt(data.report.status);
       reports.set(data.variantId,data.report);if(current()?.id===data.variantId){renderReport(data.report);if(data.report.status==='failed'||data.report.status==='error')playFire();}
       runtime('Python готов','ready');controls();renderNav();
     }
@@ -183,23 +188,41 @@ function initWorker() {
   worker.onerror=()=>{if(epoch===generation)engineFailure('Среда Python остановилась. Нажми «Подключить Python» и попробуй снова.');};
   controls();
 }
-function engineFailure(message) { clearTimeout(timer);worker?.terminate();generation++;ready=false;running=false;runtime('Python недоступен','failed');controls();renderReport({status:'error',title:'Не удалось запустить проверку',message}); }
+function engineFailure(message) { finishAttempt('error'); clearTimeout(timer);worker?.terminate();generation++;ready=false;running=false;runtime('Python недоступен','failed');controls();renderReport({status:'error',title:'Не удалось запустить проверку',message}); }
 function cancelRun(show=true) {
+  finishAttempt('cancelled');
   clearTimeout(timer);running=false;worker?.terminate();generation++;
   if(show)renderReport({status:'error',title:'Проверка остановлена',message:'Код сохранён в редакторе. Можно исправить его и запустить снова.'});
   initWorker();
 }
-function runCode() {
-  if(!bank||running)return;
+async function runCode() {
+  if(!auth||!bank||running||$('practice-screen').hidden)return;
   if(!ready){initWorker();return;}
-  stopFire();saveDraft();running=true;controls();runtime('Проверяем тесты');
-  renderReport({status:'running',title:'Проверяем решение…',message:`Подставляем входные данные: ${current().tests.length} тестов.`});
-  const id=current().id;
-  timer=setTimeout(()=>{
-    const report={status:'error',title:'Превышено время выполнения',message:'Проверка заняла больше 5 секунд. Проверь завершение циклов, рекурсии и размеры создаваемых объектов.'};
-    reports.set(id,report);cancelRun(false);renderReport(report);playFire();
-  },5000);
-  worker.postMessage({type:'run',variantId:id,chapter:bank.chapters[chapterIndex].number,code:editor.value,tests:current().tests.map(t=>({...t,display_input_code:visibleInputs(t,current())}))});
+  stopFire();saveDraft();running=true;controls();
+  const v=current(), id=v.id, code=editor.value, token=auth.token;
+  const attempt={variantId:id,code,attemptId:crypto.randomUUID(),courseId:config.courseId,token};
+  activeAttempt=attempt;
+  renderReport({status:'running',title:'Сохраняем отправленный код…'});
+  notice('Сохраняем код в таблице…');
+  try {
+    const response=await api('begin',attempt,token);
+    if(auth?.token!==token)return;
+    applyEntry(response.entry);
+    if(activeAttempt!==attempt)return;
+    notice('Код сохранён. Проверяем тесты…');
+    runtime('Проверяем тесты');
+    renderReport({status:'running',title:'Проверяем решение…',message:`Подставляем входные данные: ${v.tests.length} тестов.`});
+    timer=setTimeout(()=>{
+      const report={status:'error',title:'Превышено время выполнения',message:'Проверка заняла больше 5 секунд. Проверь завершение циклов, рекурсии и размеры создаваемых объектов.'};
+      reports.set(id,report);finishAttempt('error');cancelRun(false);renderReport(report);playFire();
+    },5000);
+    worker.postMessage({type:'run',variantId:id,chapter:bank.chapters[chapterIndex].number,code,tests:v.tests.map(t=>({...t,display_input_code:visibleInputs(t,v)}))});
+  } catch(error) {
+    if(activeAttempt!==attempt)return;
+    activeAttempt=null;running=false;controls();
+    notice('Не удалось подтвердить сохранение кода. Нажми «Проверить решение» ещё раз.');
+    renderReport({status:'error',title:'Проверка не началась',message:error.message});
+  }
 }
 function stopFire(){
   fireTicket++;clearTimeout(fireTimer);$('fire-overlay').classList.remove('is-playing','reduced-motion');fireVideo.pause();
@@ -238,25 +261,134 @@ function moveExercise(delta) {
 }
 $('prev').addEventListener('click',()=>moveExercise(-1));$('next').addEventListener('click',()=>moveExercise(1));
 $('chapter').addEventListener('change',()=>selectChapter(Number($('chapter').value)));
-window.addEventListener('hashchange',()=>{if(bank)selectById(location.hash.slice(1));});
-window.addEventListener('beforeunload',event=>{if([...drafts.values()].some(x=>x.split('\n').some(line=>line.trim()&&!line.trim().startsWith('#')))){event.preventDefault();event.returnValue='';}});
+window.addEventListener('hashchange',route);
+window.addEventListener('beforeunload',event=>{if(running||outbox.length||[...drafts].some(([id,code])=>code!==(progress[id]?.code??initialCode(allVariants().find(v=>v.id===id))))){event.preventDefault();event.returnValue='';}});
 async function start() {
   try{
     const bundled=document.getElementById('task-data');
     if(bundled)bank=JSON.parse(bundled.textContent);
     else{const response=await fetch('./tasks.json');if(!response.ok)throw Error('tasks');bank=await response.json();}
     $('chapter').replaceChildren(...bank.chapters.map((ch,i)=>{const option=node('option',`${ch.number}. ${ch.title}`);option.value=String(i);return option;}));
-    if(!selectById(location.hash.slice(1)))selectChapter(0);
-    initWorker();registerTools();
-  }catch(error){$('statement').textContent='Не удалось загрузить задачи. Обнови страницу и проверь соединение.';runtime('Ошибка загрузки','failed');}
+    registerTools();await restoreSession();
+  }catch(error){$('auth-error').hidden=false;$('auth-error').textContent='Не удалось загрузить тренажёр. Обнови страницу.';}
 }
 function registerTools(){
   const context=document.modelContext;if(!context?.registerTool)return;
   const lifecycle=new AbortController();window.addEventListener('pagehide',()=>lifecycle.abort(),{once:true});
   const definitions=[
     {name:'list_python_exercises',description:'Прочитать все главы, задачи и варианты.',inputSchema:{type:'object',properties:{},additionalProperties:false},annotations:{readOnlyHint:true},execute:()=>bank.chapters.map(ch=>({chapter:ch.title,tasks:ch.tasks.map(t=>({title:t.title,variants:t.variants.map(v=>({id:v.id,title:v.title}))}))}))},
-    {name:'select_python_exercise',description:'Открыть вариант любой главы. Черновик остаётся в памяти вкладки.',inputSchema:{type:'object',properties:{variantId:{type:'string'}},required:['variantId'],additionalProperties:false},annotations:{readOnlyHint:false},execute:({variantId})=>{if(selectById(variantId))return {id:current().id,title:current().title};throw Error('Неизвестный вариант');}}
+    {name:'select_python_exercise',description:'Открыть вариант любой главы. Черновик остаётся в памяти вкладки.',inputSchema:{type:'object',properties:{variantId:{type:'string'}},required:['variantId'],additionalProperties:false},annotations:{readOnlyHint:false},execute:({variantId})=>{if(!auth)throw Error('Сначала войди в профиль');if(selectById(variantId))return {id:current().id,title:current().title};throw Error('Неизвестный вариант');}}
   ];
   for(const definition of definitions){try{Promise.resolve(context.registerTool(definition,{signal:lifecycle.signal})).catch(()=>{});}catch{}}
 }
+const config=JSON.parse($('config-data').textContent);
+const solutions=JSON.parse($('solution-data').textContent);
+let auth=null,progress={},activeAttempt=null,outbox=[],flushing=false;
+const allVariants=()=>bank.chapters.flatMap(ch=>ch.tasks.flatMap(t=>t.variants));
+function readLocal(key,fallback){try{return JSON.parse(localStorage.getItem(key))??fallback;}catch{return fallback;}}
+function writeLocal(key,value){try{localStorage.setItem(key,JSON.stringify(value));}catch{}}
+function notice(message,retry=false){$('save-notice').hidden=!message;$('save-message').textContent=message;$('retry-save').hidden=!retry;}
+async function api(action,payload={},token=auth?.token){
+  if(!config.apiUrl)throw Error('Сохранение ещё не подключено.');
+  const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),25000);
+  try{
+    const response=await fetch(config.apiUrl,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({...payload,action,token}),signal:abort.signal,redirect:'follow'});
+    if(!response.ok)throw Error('Сервис сохранения недоступен. Попробуй ещё раз.');
+    const result=await response.json();
+    if(!result.ok){const e=Error(result.error.message);e.code=result.error.code;throw e;}
+    return result.data;
+  }catch(e){if(e.name==='AbortError'||e instanceof TypeError)throw Error('Нет ответа от таблицы. Проверь интернет и повтори.');throw e;}
+  finally{clearTimeout(timeout);}
+}
+function showScreen(screen){
+  for(const name of ['auth','courses','theory','practice'])$(name+'-screen').hidden=name!==screen;
+  $('account-name').hidden=$('logout').hidden=!auth;
+  $('account-name').textContent=auth?.user.name||'';
+  $('runtime').hidden=screen!=='practice';
+  if(screen==='practice'&&!worker)initWorker();
+  if(screen==='courses')renderCourse();
+}
+function route(){
+  if(!bank)return;
+  if(!auth){showScreen('auth');return;}
+  const hash=location.hash.slice(1);
+  if(hash==='theory'){saveDraft();showScreen('theory');return;}
+  if(hash==='courses'||!hash){saveDraft();showScreen('courses');return;}
+  if(!selectById(hash))showScreen('courses');
+}
+function renderCourse(){
+  const variants=allVariants(),n=variants.filter(v=>progress[v.id]?.solved).length,m=variants.length;
+  $('course-count').textContent=`${n} / ${m}`;$('course-progress').max=m;$('course-progress').value=n;
+  $('course-percent').textContent=`${Math.round(n/m*1000)/10}%`;
+  const next=variants.find(v=>!progress[v.id]?.solved);
+  $('course-next').textContent=next?'Дальше: '+next.title:'Все задания решены. Можно повторить любую тему.';
+  $('open-course').textContent=next?(n?'Продолжить курс →':'Начать курс →'):'Повторить курс →';
+}
+function renderSolution(){const v=current();$('solution-panel').hidden=!v||!progress[v.id]?.solved;$('solution-code').textContent=v?solutions[v.id]||'':'';}
+function applyEntry(entry){
+  if(!entry)return;
+  if((progress[entry.variantId]?.revision||0)>entry.revision)return;
+  progress[entry.variantId]=entry;
+  renderCourse();if(selectionReady){renderNav();renderSolution();
+    tasks[taskIndex].variants.forEach((v,i)=>$('variants').children[i]?.classList.toggle('is-solved',!!progress[v.id]?.solved));}
+}
+function acceptSession(data,token){
+  auth={token:token||data.token,user:data.user};progress=data.progress||{};
+  drafts.clear();reports.clear();selectionReady=false;
+  Object.values(progress).forEach(e=>{drafts.set(e.variantId,e.code);reports.set(e.variantId,{status:e.status==='passed'?'passed':'error',title:e.solved?'✓ Последнее решение прошло все тесты':'Последнее решение не зачтено',message:'Код загружен из таблицы. Запусти проверку, чтобы увидеть подробности.'});});
+  writeLocal('python-session',auth);
+  outbox=readLocal('python-pending-'+auth.user.id,[]);
+  history.replaceState(null,'','#courses');showScreen('courses');flushOutbox();
+}
+async function authenticate(action){
+  if(!$('auth-form').reportValidity())return;
+  $('login').disabled=$('register').disabled=true;$('auth-error').hidden=true;
+  try{acceptSession(await api(action,{username:$('username').value},null));}
+  catch(e){$('auth-error').textContent=e.message;$('auth-error').hidden=false;}
+  finally{$('login').disabled=$('register').disabled=false;}
+}
+async function restoreSession(){
+  const saved=readLocal('python-session',null);
+  if(!saved?.token){showScreen('auth');return;}
+  $('login').disabled=$('register').disabled=true;
+  try{acceptSession(await api('resume',{},saved.token),saved.token);}
+  catch(e){showScreen('auth');$('username').value=saved.user?.name||'';$('auth-error').textContent=e.message;$('auth-error').hidden=false;}
+  finally{$('login').disabled=$('register').disabled=false;}
+}
+function finishAttempt(status){
+  const attempt=activeAttempt;if(!attempt)return;activeAttempt=null;
+  if(auth?.token!==attempt.token)return;
+  const entry=progress[attempt.variantId];
+  if(entry?.attemptId===attempt.attemptId)applyEntry({...entry,solved:status==='passed',status});
+  outbox.push({variantId:attempt.variantId,attemptId:attempt.attemptId,courseId:config.courseId,status});
+  writeLocal('python-pending-'+auth.user.id,outbox);flushOutbox();
+}
+async function flushOutbox(){
+  if(flushing||!auth||!outbox.length)return;
+  flushing=true;const token=auth.token,userId=auth.user.id;
+  try{
+    notice('Сохраняем результат в таблице…');
+    while(outbox.length&&auth?.token===token){
+      const item=outbox[0],response=await api('finish',item,token);
+      if(auth?.token!==token)return;
+      applyEntry(response.entry);outbox.shift();writeLocal('python-pending-'+userId,outbox);
+    }
+    if(auth?.token===token)notice('Код и результат сохранены в таблице.');
+  }catch(e){if(auth?.token===token)notice('Результат пока не сохранён в таблице. '+e.message,true);}
+  finally{flushing=false;}
+}
+$('auth-form').addEventListener('submit',e=>{e.preventDefault();authenticate('login');});
+$('register').addEventListener('click',()=>authenticate('register'));
+$('retry-save').addEventListener('click',flushOutbox);
+window.addEventListener('online',flushOutbox);
+$('open-course').addEventListener('click',()=>{const v=allVariants().find(v=>!progress[v.id]?.solved)||allVariants()[0];selectById(v.id);});
+$('logout').addEventListener('click',async()=>{
+  if(running)cancelRun(false);
+  await flushOutbox();
+  if(outbox.length){notice('Перед выходом сохрани результат кнопкой «Повторить сохранение».',true);return;}
+  const token=auth?.token;auth=null;progress={};drafts.clear();reports.clear();selectionReady=false;
+  worker?.terminate();worker=null;generation++;clearTimeout(timer);ready=false;running=false;
+  writeLocal('python-session',null);notice('');history.replaceState(null,'','#courses');showScreen('auth');
+  if(token)api('logout',{},token).catch(()=>{});
+});
 start();

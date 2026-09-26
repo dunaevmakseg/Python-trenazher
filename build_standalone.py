@@ -18,6 +18,8 @@ def safe_json(value):
 bank=json.loads((dist/'tasks.json').read_text(encoding='utf-8'))
 html=re.sub(r'  <link rel="stylesheet"[^\n]+', '<style>'+css.replace('\\',r'\\')+'</style>',template)
 scripts='<script id="task-data" type="application/json">'+safe_json(bank)+'</script>\n'
+scripts+='<script id="config-data" type="application/json">'+safe_json(json.loads((dist/'config.json').read_text(encoding='utf-8')))+'</script>\n'
+scripts+='<script id="solution-data" type="application/json">'+safe_json(json.loads((dist/'solutions.json').read_text(encoding='utf-8')))+'</script>\n'
 scripts+='<script id="joke-data" type="application/json">'+safe_json(json.loads((dist/'jokes.json').read_text(encoding='utf-8')))+'</script>\n'
 scripts+='<script id="fire-data" type="text/plain">data:video/mp4;base64,'+base64.b64encode((dist/'assets/fire-ring.mp4').read_bytes()).decode('ascii')+'</script>\n'
 scripts+='<script id="worker-source" type="application/json">'+safe_json(worker)+'</script>\n'
